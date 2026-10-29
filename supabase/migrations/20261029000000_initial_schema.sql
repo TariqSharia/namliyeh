@@ -1,4 +1,4 @@
--- Home supplies and money app: initial schema (phase 1 creates every table).
+-- Namliyeh: initial schema (phase 1 creates every table).
 -- Rules this file enforces (see the data model doc):
 --   * every private row carries household_id and is guarded by row-level security
 --   * the shared catalog (categories, items, brands, products, stores) is readable by everyone once approved
@@ -438,7 +438,7 @@ $$;
 
 -- updated_at on every update
 create function public.touch_updated_at() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   new.updated_at = now();
   return new;
@@ -713,7 +713,9 @@ $$;
 -- Grants: what the signed-in role may touch at all (RLS then filters the rows)
 -- ---------------------------------------------------------------------------
 
-revoke all on all tables in schema public from anon;
+-- Supabase grants anon and authenticated full access to new public tables by default.
+-- Remove that first, then grant only what the app needs (RLS then filters the rows).
+revoke all on all tables in schema public from anon, authenticated;
 grant select on all tables in schema public to authenticated;
 grant insert, update on
   public.categories, public.items, public.brands, public.products, public.stores,
@@ -729,6 +731,13 @@ grant update (status) on public.price_reports to authenticated;
 revoke execute on function public.create_household(text, text, text) from public, anon;
 revoke execute on function public.create_invite(uuid) from public, anon;
 revoke execute on function public.join_household(text) from public, anon;
+revoke execute on function public.is_member(uuid) from public, anon;
+revoke execute on function public.is_catalog_staff() from public, anon;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.report_price() from public, anon, authenticated;
+revoke execute on function public.check_same_household() from public, anon, authenticated;
+grant execute on function public.is_member(uuid) to authenticated;
+grant execute on function public.is_catalog_staff() to authenticated;
 grant execute on function public.create_household(text, text, text) to authenticated;
 grant execute on function public.create_invite(uuid) to authenticated;
 grant execute on function public.join_household(text) to authenticated;

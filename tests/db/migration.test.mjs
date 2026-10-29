@@ -18,6 +18,9 @@ const AUTH_STUB = `
   grant usage on schema auth to authenticated;
   grant usage on schema public to authenticated, anon;
   grant execute on function auth.uid() to authenticated;
+  -- Same defaults as a Supabase project: new public tables and functions are open to these roles.
+  alter default privileges in schema public grant all on tables to anon, authenticated;
+  alter default privileges in schema public grant all on functions to anon, authenticated;
 `;
 
 async function freshDb() {
@@ -177,10 +180,26 @@ test('a member cannot write into another household or link across households', a
   });
 });
 
-test('users cannot promote themselves to catalog staff', async () => {
+test('users cannot promote themselves to catalog staff or hard-delete rows', async () => {
   const db = await freshDb();
   await addUser(db, TARIQ, 'tariq');
+  const hh = await as(db, TARIQ, async () =>
+    (await db.query(`select public.create_household('Home') as id`)).rows[0].id
+  );
   await as(db, TARIQ, async () => {
     await assert.rejects(db.query(`update public.profiles set catalog_role = 'admin' where id = $1`, [TARIQ]));
+    await assert.rejects(db.query(`delete from public.labels where household_id = $1`, [hh]));
+    await assert.rejects(db.query(`update public.price_reports set unit_price = 1`));
   });
+});
+
+test('a visitor who is not signed in can read nothing', async () => {
+  const db = await freshDb();
+  await db.exec('set role anon;');
+  try {
+    await assert.rejects(db.query(`select * from public.items limit 1`));
+    await assert.rejects(db.query(`select public.create_household('x')`));
+  } finally {
+    await db.exec('reset role;');
+  }
 });
