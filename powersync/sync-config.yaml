@@ -1,0 +1,51 @@
+# What each phone downloads. Paste this into PowerSync's "Sync Streams" screen and deploy.
+# Rule: a phone gets the approved shared catalog, the catalog rows its own household added,
+# and every row of the households its user belongs to. Nothing else.
+config:
+  edition: 3
+
+streams:
+  # The approved shared catalog: the same for every user.
+  catalog:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM categories WHERE status = 'approved'
+      - SELECT * FROM items WHERE status = 'approved'
+      - SELECT * FROM brands WHERE status = 'approved'
+      - SELECT * FROM products WHERE status = 'approved'
+      - SELECT * FROM stores WHERE status = 'approved'
+
+  # Catalog rows this household added that are still waiting for review.
+  own_catalog:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM categories WHERE created_by_household IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM items WHERE created_by_household IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM brands WHERE created_by_household IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM products WHERE created_by_household IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM stores WHERE created_by_household IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+
+  me:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM profiles WHERE id = auth.user_id()
+
+  # Everything private to the user's households.
+  household:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM households WHERE id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT hm.* FROM household_members hm WHERE hm.household_id IN (SELECT mine.household_id FROM household_members mine WHERE mine.user_id = auth.user_id())
+      - SELECT * FROM locations WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM household_items WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM labels WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM household_item_labels WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM household_stores WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM money_categories WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM purchases WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM purchase_lines WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM transactions WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM batches WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM stock_movements WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM level_changes WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
+      - SELECT * FROM shopping_list_entries WHERE household_id IN (SELECT household_id FROM household_members WHERE user_id = auth.user_id())
