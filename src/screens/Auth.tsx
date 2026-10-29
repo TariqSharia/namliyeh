@@ -86,9 +86,12 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
         <button className="btn primary wide" disabled={busy}>
           {busy ? t('wait') : mode === 'signin' ? t('signIn') : t('createAccount')}
         </button>
-        <button type="button" className="btn ghost wide" onClick={google} disabled={busy}>
-          <span aria-hidden="true">G</span> {t('withGoogle')}
-        </button>
+        {/* Shown only once Google sign-in is configured in Supabase (VITE_GOOGLE_SIGN_IN=1). */}
+        {import.meta.env.VITE_GOOGLE_SIGN_IN === '1' && (
+          <button type="button" className="btn ghost wide" onClick={google} disabled={busy}>
+            <span aria-hidden="true">G</span> {t('withGoogle')}
+          </button>
+        )}
         <button type="button" className="link" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
           {mode === 'signin' ? t('noAccount') : t('haveAccount')}
         </button>
