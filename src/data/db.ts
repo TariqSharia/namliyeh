@@ -6,7 +6,7 @@ import { AppSchema } from './schema';
 export const db = new PowerSyncDatabase({
   schema: AppSchema,
   database: {
-    dbFilename: 'home-supplies.db',
+    dbFilename: 'namliyeh.db',
     vfs: WASQLiteVFS.OPFSCoopSyncVFS,
     enableMultiTabs: typeof SharedWorker !== 'undefined'
   }

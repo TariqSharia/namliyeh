@@ -22,8 +22,8 @@ export default defineConfig({
       },
       includeAssets: ['icons/*.png', 'icons/icon.svg'],
       manifest: {
-        name: 'Home supplies',
-        short_name: 'Home',
+        name: 'Namliyeh · النملية',
+        short_name: 'النملية',
         description: 'What we have, what we used, what to buy, and where the money goes.',
         lang: 'ar',
         dir: 'auto',

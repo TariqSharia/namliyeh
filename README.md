@@ -1,6 +1,6 @@
-# Home
+# Namliyeh (النملية)
 
-A household app for supplies and money, shared by a family across Android and iPhone, in Arabic and English, and usable offline.
+Named after the old Palestinian kitchen cupboard with a mesh door that kept food fresh and safe. A household app for supplies and money, shared by a family across Android and iPhone, in Arabic and English, and usable offline.
 
 - **We bought**: record a shopping trip in a few taps. Stock goes up, expiry dates are set, and one expense is logged.
 - **We used**: one tap per thing finished or thrown away, with Undo on every action.

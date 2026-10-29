@@ -72,7 +72,7 @@ export function Settings() {
     const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), ...out }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `home-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `namliyeh-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
   }

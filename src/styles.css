@@ -1271,6 +1271,11 @@ input[type='checkbox'][role='switch']:checked::after {
   font-size: 3rem;
 }
 
+.brand-icon {
+  inline-size: 96px;
+  block-size: 96px;
+}
+
 .auth h1 {
   font-size: 2.2rem;
   font-weight: 600;

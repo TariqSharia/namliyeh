@@ -45,9 +45,7 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
   return (
     <div className="auth">
       <div className="auth-head">
-        <div className="brand-mark" aria-hidden="true">
-          🫒
-        </div>
+        <img className="brand-icon" src="/icons/icon.svg" alt="" width="96" height="96" />
         <h1>{t('appName')}</h1>
         <p className="lede">{t('appTagline')}</p>
         <div className="lang-switch" role="group" aria-label={t('language')}>

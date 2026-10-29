@@ -1,6 +1,6 @@
 // English text. Every key here must also exist in ar.ts (a test checks this).
 export const en = {
-  appName: 'Home',
+  appName: 'Namliyeh',
   appTagline: 'What we have, what we used, what to buy, and where the money goes.',
   language: 'Language',
   back: 'Back',

@@ -16,7 +16,7 @@ Never paste keys or passwords into a chat. They go only where this guide says.
    ```
 
 5. Open **Authentication** → **URL Configuration**:
-   - **Site URL**: your Cloudflare address once you have it (step 4), for example `https://home-supplies.pages.dev`.
+   - **Site URL**: your Cloudflare address once you have it (step 4), for example `https://namliyeh.pages.dev`.
    - **Redirect URLs**: add the same address, and `http://localhost:5173` for testing on your computer.
 6. Open **Project Settings** → **API keys** and keep this tab open: you need the **Project URL** and the **publishable key** (starts with `sb_publishable_`).
 
@@ -55,7 +55,7 @@ Open `http://localhost:5173`.
 
 ## 4. Cloudflare Pages: the app's address
 
-1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**, and pick the `home-supplies` repository.
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**, and pick the `namliyeh` repository.
 2. Build settings:
    - Framework preset: **None**
    - Build command: `npm run build`
@@ -65,7 +65,7 @@ Open `http://localhost:5173`.
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
    - `VITE_POWERSYNC_URL`
    - `NODE_VERSION` = `22`
-4. **Save and deploy**. You get an address like `https://home-supplies.pages.dev`. Put it into Supabase (step 1.5).
+4. **Save and deploy**. You get an address like `https://namliyeh.pages.dev` (if that name is taken, Cloudflare adds a few letters; use the address it gives you). Put it into Supabase (step 1.5).
 
 Every push to GitHub publishes a new version, and the phones update themselves the next time the app opens.
 

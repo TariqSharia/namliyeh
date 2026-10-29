@@ -2,7 +2,7 @@ import type { Messages } from './en';
 
 // النصوص العربية. كل مفتاح هنا يجب أن يكون في en.ts أيضاً (يوجد اختبار يتأكد من ذلك).
 export const ar: Messages = {
-  appName: 'البيت',
+  appName: 'النملية',
   appTagline: 'شو عنّا، شو استعملنا، شو لازم نشتري، ووين بتروح المصاري.',
   language: 'اللغة',
   back: 'رجوع',
