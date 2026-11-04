@@ -1,0 +1,66 @@
+# Keeps the free Supabase project from being paused for inactivity.
+#
+# Supabase pauses free projects that get too little *user database activity* in a week;
+# its docs say a few requests a day is enough. A call to the API root (/rest/v1/) runs no
+# database query, so this reads one row from public.keepalive instead
+# (see supabase/migrations/20261104000000_keepalive.sql).
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL       https://<project-ref>.supabase.co
+#   SUPABASE_ANON_KEY  the project's publishable key (sb_publishable_...). Never the secret
+#                      or service_role key.
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # every day at 06:17 UTC
+  workflow_dispatch:
+
+# The job only makes an outgoing request; it needs no access to the repository.
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read one row from public.keepalive
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -uo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Missing secrets. Add SUPABASE_URL and SUPABASE_ANON_KEY in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          # The publishable key goes in the apikey header only: it is not a JWT, so Supabase
+          # rejects it in an Authorization: Bearer header.
+          code=$(curl --silent --show-error --max-time 30 --retry 3 --retry-delay 10 \
+            --output response.json --write-out '%{http_code}' \
+            --header "apikey: ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL%/}/rest/v1/keepalive?select=id&limit=1") || true
+
+          echo "HTTP ${code}"
+          echo "Response: $(head -c 200 response.json 2>/dev/null)"
+
+          case "${code}" in
+            2??)
+              echo "The database answered a query. The project counts as active."
+              ;;
+            000)
+              echo "::error::No response from Supabase (network error or timeout)."
+              exit 1
+              ;;
+            4??)
+              # A 4xx means the request never reached the database, so nothing was kept alive.
+              echo "::error::HTTP ${code}: the query did not reach the database. Check that SUPABASE_URL and SUPABASE_ANON_KEY are right and that the keepalive table exists."
+              exit 1
+              ;;
+            *)
+              echo "::error::HTTP ${code}: Supabase returned a server error (the project may already be paused)."
+              exit 1
+              ;;
+          esac

@@ -193,6 +193,29 @@ test('users cannot promote themselves to catalog staff or hard-delete rows', asy
   });
 });
 
+test('the keep-alive ping can read one row and nothing else', async () => {
+  const db = await freshDb();
+  await addUser(db, TARIQ, 'tariq');
+  await db.exec('set role anon;');
+  try {
+    // The exact query the GitHub Action sends: GET /rest/v1/keepalive?select=id&limit=1
+    const { rows } = await db.query(`select id from public.keepalive limit 1`);
+    assert.deepEqual(rows, [{ id: 1 }]);
+    await assert.rejects(db.query(`insert into public.keepalive (id) values (2)`));
+    await assert.rejects(db.query(`update public.keepalive set pinged_at = now()`));
+    await assert.rejects(db.query(`delete from public.keepalive`));
+  } finally {
+    await db.exec('reset role;');
+  }
+  // Signed-in users have no reason to touch it either.
+  await as(db, TARIQ, async () => {
+    await assert.rejects(db.query(`select id from public.keepalive`));
+  });
+  // Never synced to phones.
+  const pub = await db.query(`select 1 from pg_publication_tables where pubname = 'powersync' and tablename = 'keepalive'`);
+  assert.equal(pub.rows.length, 0);
+});
+
 test('a visitor who is not signed in can read nothing', async () => {
   const db = await freshDb();
   await db.exec('set role anon;');

@@ -87,6 +87,21 @@ Open it from the home screen icon, not from the browser, so it keeps its data li
 
 If step 4 or 6 fails, send me the message from **Settings → Not saved** (if any) and what you saw.
 
+## 7. Keep the free Supabase project awake
+
+Supabase pauses free projects after a week without enough database activity. The workflow
+`.github/workflows/supabase-keepalive.yml` reads one row from the `keepalive` table every day,
+which counts as activity. It needs two secrets in GitHub, under the repository's
+**Settings → Secrets and variables → Actions → New repository secret**:
+
+| Name | Value |
+| --- | --- |
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+| `SUPABASE_ANON_KEY` | the **publishable** key (`sb_publishable_...`) from Supabase → **Project Settings → API Keys** |
+
+Never use the secret (`sb_secret_...`) or `service_role` key here. To test it: **Actions →
+Supabase keep-alive → Run workflow**. A green run prints `HTTP 200`. GitHub emails you if a run fails.
+
 ## Optional later: Google sign-in
 
 Needs a Google Cloud OAuth client. Supabase → **Authentication** → **Sign In / Providers** → **Google** walks you through it. Email and password work without it.
