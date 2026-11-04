@@ -5,6 +5,7 @@ import { takeFromStock, undoMovements, wasteBatch } from '../data/actions';
 import { today } from '../data/dates';
 import { EXPIRING_SOON, NEED_TO_BUY } from '../data/queries';
 import { nameOf, numberFmt, useLang, useT } from '../i18n';
+import { InstallCard } from '../ui/InstallCard';
 import { Screen } from '../ui/Screen';
 import { useToast } from '../ui/Toast';
 
@@ -33,6 +34,7 @@ export function Home() {
 
   return (
     <Screen title={household.name} showBack={false}>
+      <InstallCard where="home" />
       <nav className="big-tiles" aria-label={t('dailyTasks')}>
         <a className="big-tile bought" href="#/buy">
           <span className="big-icon" aria-hidden="true">

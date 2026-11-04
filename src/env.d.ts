@@ -5,5 +5,4 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string;
   readonly VITE_POWERSYNC_URL?: string;
   readonly VITE_DEMO?: string;
-  readonly VITE_GOOGLE_SIGN_IN?: string;
 }

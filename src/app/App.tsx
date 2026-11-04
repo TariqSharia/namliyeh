@@ -1,7 +1,8 @@
 import { useStatus } from '@powersync/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isConfigured } from '../data/connector';
 import { DEMO } from '../demo';
+import { updateProfile } from '../data/actions';
 import { getStoredLang, LangProvider, storeLang, useT, type Lang } from '../i18n';
 import { Auth } from '../screens/Auth';
 import { Buy } from '../screens/Buy';
@@ -37,6 +38,7 @@ export function App() {
           onLang={(l) => {
             storeLang(l);
             setLang(l);
+            setPendingLang(l);
           }}
         />
       </LangProvider>
@@ -50,6 +52,13 @@ function SignedIn({ userId, fallbackLang }: { userId: string; fallbackLang: Lang
   const { households, profile } = useMyHouseholds(userId);
   const lang: Lang = profile?.language ?? fallbackLang;
   const household = households[0];
+
+  // A language picked on the sign-in screen wins once the profile exists. This matters for
+  // Google sign-ups, which cannot carry the choice the way the email sign-up form does.
+  useEffect(() => {
+    const pending = takePendingLang();
+    if (pending && profile && profile.language !== pending) void updateProfile(userId, { language: pending });
+  }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!household) {
     return (
@@ -140,4 +149,25 @@ function Message({ icon, titleKey, hintKey }: { icon: string; titleKey: 'notConf
       </div>
     </div>
   );
+}
+
+const PENDING_LANG = 'lang-chosen-before-sign-in';
+
+function setPendingLang(l: Lang) {
+  try {
+    localStorage.setItem(PENDING_LANG, l);
+  } catch {
+    /* ignore */
+  }
+}
+
+function takePendingLang(): Lang | null {
+  try {
+    const v = localStorage.getItem(PENDING_LANG);
+    if (v !== 'ar' && v !== 'en') return null;
+    localStorage.removeItem(PENDING_LANG);
+    return v;
+  } catch {
+    return null;
+  }
 }

@@ -52,6 +52,8 @@ npm test
 - [x] Income and expenses with monthly reports
 - [x] Arabic and English, right to left
 - [x] Offline with sync
+- [x] Google sign-in, and install help for Android, iPhone and in-app browsers
+- [x] Daily keep-alive for the free Supabase plan
 - [ ] Barcode scanning
 - [ ] Recurring entries and budgets
 - [ ] Price comparison between shops

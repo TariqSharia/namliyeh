@@ -9,11 +9,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './app/App';
+import { listenForInstall } from './app/install';
 import { SessionProvider } from './app/session';
 import { db } from './data/db';
 
 // Installs the offline copy of the app and updates it quietly when a new version is published.
 registerSW({ immediate: true });
+listenForInstall();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

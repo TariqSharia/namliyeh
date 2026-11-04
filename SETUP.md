@@ -102,6 +102,14 @@ which counts as activity. It needs two secrets in GitHub, under the repository's
 Never use the secret (`sb_secret_...`) or `service_role` key here. To test it: **Actions →
 Supabase keep-alive → Run workflow**. A green run prints `HTTP 200`. GitHub emails you if a run fails.
 
-## Optional later: Google sign-in
+## 8. Google sign-in
 
-Needs a Google Cloud OAuth client. Supabase → **Authentication** → **Sign In / Providers** → **Google** walks you through it. Email and password work without it.
+The Google button appears by itself once Google is turned on in Supabase; no rebuild needed.
+
+1. Google Cloud console → new project `Namliyeh` → **Google Auth Platform** → **Get started**: app name, support email, Audience **External**.
+2. **Clients** → **Create client** → **Web application**:
+   - Authorized JavaScript origins: `https://namliyeh.pages.dev`
+   - Authorized redirect URIs: `https://<project-ref>.supabase.co/auth/v1/callback`
+3. **Audience** → **Publish app** (only name and email are requested, which Google does not review).
+4. Supabase → **Authentication → Sign In / Providers → Google**: turn on, paste the client ID and secret, save.
+5. Supabase → **Authentication → URL Configuration**: Site URL `https://namliyeh.pages.dev`, Redirect URL `https://namliyeh.pages.dev/**`.
