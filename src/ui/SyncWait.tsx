@@ -1,5 +1,6 @@
 import { useStatus } from '@powersync/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { db } from '../data/db';
 import { reconnect, signOut } from '../app/session';
 import { useT } from '../i18n';
 
@@ -11,6 +12,36 @@ export function SyncWait({ titleKey, hintKey = 'loadingHint' }: { titleKey: 'loa
   const t = useT();
   const status = useStatus();
   const [retrying, setRetrying] = useState(false);
+  const [local, setLocal] = useState('');
+
+  // What is actually on this phone: row counts, and the sync buckets it was given.
+  useEffect(() => {
+    let cancelled = false;
+    const read = async () => {
+      const parts: string[] = [];
+      for (const table of ['profiles', 'households', 'household_members', 'items', 'categories']) {
+        try {
+          const row = await db.get<{ n: number }>(`SELECT count(*) AS n FROM ${table}`);
+          parts.push(`${table}=${row.n}`);
+        } catch (e) {
+          parts.push(`${table}=error`);
+        }
+      }
+      try {
+        const buckets = await db.getAll<{ name: string }>(`SELECT name FROM ps_buckets ORDER BY name`);
+        parts.push(`buckets=${buckets.map((b) => b.name).join(', ') || 'none'}`);
+      } catch {
+        parts.push('buckets=unknown');
+      }
+      if (!cancelled) setLocal(parts.join('\n'));
+    };
+    void read();
+    const timer = setInterval(() => void read(), 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
   const error = status.dataFlowStatus?.downloadError;
   const online = typeof navigator === 'undefined' || navigator.onLine;
   const progress = status.downloadProgress;
@@ -22,7 +53,7 @@ export function SyncWait({ titleKey, hintKey = 'loadingHint' }: { titleKey: 'loa
     `connected=${status.connected}`,
     `downloading=${Boolean(status.dataFlowStatus?.downloading)}`,
     progress ? `progress=${progress.downloadedOperations}/${progress.totalOperations}` : 'progress=none',
-    `streams=${status.syncStreams?.length ?? 0}`,
+    `streams=${(status.syncStreams ?? []).map((st) => `${st.subscription.name}:${st.subscription.hasSynced ? 'synced' : 'waiting'}`).join(',') || 'none'}`,
     `v${__APP_VERSION__}`
   ].join(' ');
   return (
@@ -55,6 +86,8 @@ export function SyncWait({ titleKey, hintKey = 'loadingHint' }: { titleKey: 'loa
         <pre dir="ltr">
           {error ? String(error.message || error) + '\n\n' : ''}
           {facts}
+          {'\n'}
+          {local}
         </pre>
       </details>
       <button className="btn danger-ghost wide" onClick={() => void signOut()}>
