@@ -118,6 +118,8 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
 
   // With Google on, the screen offers two equal choices; the email form opens in their place.
   const choosing = googleOn && !showEmail;
+  // Split the sentence around its two links so each language keeps its own word order.
+  const agreeParts = t('agreeLine').split(/(\{terms\}|\{privacy\})/);
 
   return (
     <main className={`auth${choosing ? ' fits' : ''}${showEmail ? ' focused' : ''}`}>
@@ -141,6 +143,7 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
       <section className="sign-in-panel" aria-label={t('signIn')}>
         {choosing ? (
           <>
+            <h2 className="sign-in-title">{t('signInOrUp')}</h2>
             {message && <p className="error">{message.text}</p>}
             <button type="button" className="btn google wide big" onClick={google} disabled={busy}>
               <GoogleMark /> {t('withGoogle')}
@@ -152,11 +155,21 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
         ) : (
           emailForm
         )}
-        <footer className="legal-links">
-          <a href="/privacy">{t('privacyPolicy')}</a>
-          <span aria-hidden="true">·</span>
-          <a href="/terms">{t('termsOfUse')}</a>
-        </footer>
+        <p className="agree-line">
+          {agreeParts.map((part, i) =>
+            part === '{terms}' ? (
+              <a key={i} href="/terms">
+                {t('termsOfUse')}
+              </a>
+            ) : part === '{privacy}' ? (
+              <a key={i} href="/privacy">
+                {t('privacyPolicy')}
+              </a>
+            ) : (
+              part
+            )
+          )}
+        </p>
       </section>
     </main>
   );

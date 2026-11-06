@@ -1367,6 +1367,9 @@ input[type='checkbox'][role='switch']:checked::after {
   .auth.fits .lede {
     display: none;
   }
+  .auth.fits .sign-in-panel {
+    padding-block-start: 8px;
+  }
 }
 
 .invite {
@@ -1477,4 +1480,47 @@ input[type='checkbox'][role='switch']:checked::after {
   min-block-size: 44px;
   display: inline-flex;
   align-items: center;
+}
+
+.error-details {
+  margin-block: 8px 16px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.error-details summary {
+  min-block-size: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.error-details pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+}
+
+.sign-in-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-align: center;
+  margin-block-end: 4px;
+}
+
+.agree-line {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin-block-start: 4px;
+}
+
+.agree-line a {
+  color: inherit;
+  text-decoration: underline;
 }

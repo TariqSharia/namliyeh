@@ -17,7 +17,7 @@ import { Use } from '../screens/Use';
 import { ToastProvider } from '../ui/Toast';
 import { HouseholdProvider, useMyHouseholds } from './household';
 import { href, useRoute, type Route } from './router';
-import { useSession } from './session';
+import { signOut, useSession } from './session';
 
 export function App() {
   const { session, ready } = useSession();
@@ -64,7 +64,7 @@ function SignedIn({ userId, fallbackLang }: { userId: string; fallbackLang: Lang
     return (
       <LangProvider lang={lang}>
         {/* Wait for the first download before deciding this user has no home yet. */}
-        {status.hasSynced || DEMO ? <Onboarding /> : <Message icon="⏳" titleKey="loading" hintKey={status.connected ? 'loadingHint' : 'firstTimeOnline'} />}
+        {status.hasSynced || DEMO ? <Onboarding /> : <Loading />}
       </LangProvider>
     );
   }
@@ -136,7 +136,7 @@ function BottomNav({ route }: { route: Route }) {
   );
 }
 
-function Message({ icon, titleKey, hintKey }: { icon: string; titleKey: 'notConfigured' | 'loading'; hintKey: 'notConfiguredHint' | 'loadingHint' | 'firstTimeOnline' }) {
+function Message({ icon, titleKey, hintKey }: { icon: string; titleKey: 'notConfigured'; hintKey: 'notConfiguredHint' }) {
   const t = useT();
   return (
     <div className="auth">
@@ -148,6 +148,40 @@ function Message({ icon, titleKey, hintKey }: { icon: string; titleKey: 'notConf
         <p className="lede">{t(hintKey)}</p>
       </div>
     </div>
+  );
+}
+
+/**
+ * Waiting for the first download. If the sync server refuses the connection, say so and show its
+ * error, instead of asking for internet the phone already has; and always offer a way out.
+ */
+function Loading() {
+  const t = useT();
+  const status = useStatus();
+  const error = status.dataFlowStatus?.downloadError;
+  const online = typeof navigator === 'undefined' || navigator.onLine;
+  const hint = error && online ? t('syncProblem') : status.connected ? t('loadingHint') : online ? t('loadingHint') : t('firstTimeOnline');
+  return (
+    <main className="auth">
+      <div className="auth-head">
+        <div className="brand-mark" aria-hidden="true">
+          ⏳
+        </div>
+        <h1>{t('loading')}</h1>
+        <p className="lede" role="status">
+          {hint}
+        </p>
+      </div>
+      {error && online && (
+        <details className="error-details">
+          <summary>{t('details')}</summary>
+          <pre dir="ltr">{String(error.message || error)}</pre>
+        </details>
+      )}
+      <button className="btn danger-ghost wide" onClick={() => void signOut()}>
+        {t('signOut')}
+      </button>
+    </main>
   );
 }
 
