@@ -1410,3 +1410,20 @@ input[type='checkbox'][role='switch']:checked::after {
   color: var(--muted);
   font-size: 0.95rem;
 }
+
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-block: 20px 8px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.legal-links a {
+  color: var(--muted);
+  text-decoration: underline;
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+}

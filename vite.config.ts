@@ -18,7 +18,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,wasm,woff2,png,svg}'],
         // The encrypted ("mc") SQLite builds are not used; leaving them out halves the first download.
         globIgnores: ['**/mc-wa-sqlite*'],
-        navigateFallback: '/index.html'
+        navigateFallback: '/index.html',
+        // Real pages, not part of the app: never answer them with the app.
+        navigateFallbackDenylist: [/^\/(privacy|terms)(\.html)?$/]
       },
       includeAssets: ['icons/*.png', 'icons/icon.svg'],
       manifest: {

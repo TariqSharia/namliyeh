@@ -1,0 +1,99 @@
+# Keeps the free PowerSync instance from being deprovisioned.
+#
+# PowerSync deprovisions free instances that have "no deploys or client connections for over
+# 7 days" (docs.powersync.com/resources/usage-and-billing). A ping does not count; a client
+# connection does. So this job does what the app does: it signs in to Supabase as a dedicated
+# keep-alive user and opens a real sync stream for a few seconds.
+#
+# The keep-alive user belongs to no household, so it only ever receives the shared catalog.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL          shared with the Supabase keep-alive
+#   SUPABASE_ANON_KEY     the publishable key (sb_publishable_...), shared too
+#   POWERSYNC_URL         https://<instance>.powersync.journeyapps.com
+#   KEEPALIVE_EMAIL       the keep-alive user created in Supabase > Authentication > Users
+#   KEEPALIVE_PASSWORD    its password
+name: PowerSync keep-alive
+
+on:
+  schedule:
+    - cron: "47 6 * * *" # every day at 06:47 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Sign in and open a sync stream
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          POWERSYNC_URL: ${{ secrets.POWERSYNC_URL }}
+          KEEPALIVE_EMAIL: ${{ secrets.KEEPALIVE_EMAIL }}
+          KEEPALIVE_PASSWORD: ${{ secrets.KEEPALIVE_PASSWORD }}
+        run: |
+          set -uo pipefail
+
+          for name in SUPABASE_URL SUPABASE_ANON_KEY POWERSYNC_URL KEEPALIVE_EMAIL KEEPALIVE_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing secret ${name}. Add it in Settings > Secrets and variables > Actions."
+              exit 1
+            fi
+          done
+
+          # 1. Sign in as the keep-alive user (the same password sign-in the app uses).
+          login_code=$(jq -n --arg email "${KEEPALIVE_EMAIL}" --arg password "${KEEPALIVE_PASSWORD}" \
+              '{email: $email, password: $password}' \
+            | curl --silent --show-error --max-time 30 --retry 3 --retry-delay 10 \
+                --output login.json --write-out '%{http_code}' \
+                --header "apikey: ${SUPABASE_ANON_KEY}" \
+                --header "Content-Type: application/json" \
+                --data @- \
+                "${SUPABASE_URL%/}/auth/v1/token?grant_type=password") || true
+          echo "Supabase sign-in: HTTP ${login_code}"
+          token=$(jq -r '.access_token // empty' login.json 2>/dev/null)
+          rm -f login.json
+          if [ "${login_code}" != "200" ] || [ -z "${token}" ]; then
+            echo "::error::Could not sign in as the keep-alive user (HTTP ${login_code}). Check KEEPALIVE_EMAIL and KEEPALIVE_PASSWORD, and that the user is confirmed."
+            exit 1
+          fi
+          echo "::add-mask::${token}"
+
+          # 2. Open a sync stream exactly like the app's PowerSync client, read for 20 seconds,
+          #    then hang up. The stream never ends by itself, so a timeout (exit 28) is expected.
+          body='{"raw_data":true,"include_checksum":true,"client_id":"github-keepalive","app_metadata":{"source":"github-keepalive"},"streams":{"include_defaults":true,"subscriptions":[]}}'
+          sync_code=$(curl --silent --no-buffer --max-time 20 \
+              --output stream.ndjson --write-out '%{http_code}' \
+              --header "Authorization: Token ${token}" \
+              --header "Content-Type: application/json" \
+              --header "x-user-agent: namliyeh-keepalive (github-actions)" \
+              --data "${body}" \
+              "${POWERSYNC_URL%/}/sync/stream") || true
+
+          lines=$(wc -l < stream.ndjson | tr -d ' ')
+          echo "PowerSync sync stream: HTTP ${sync_code}, ${lines} lines received"
+          # Show only the kinds of messages, never the data itself.
+          head -n 50 stream.ndjson | jq -rc 'keys[0]' 2>/dev/null | sort | uniq -c | sed 's/^/  /' || true
+
+          case "${sync_code}" in
+            200)
+              if grep -q '"checkpoint' stream.ndjson; then
+                echo "A client connected and received a checkpoint. The instance counts as active."
+              else
+                echo "::error::Connected, but no checkpoint arrived in 20 seconds. The instance may still be starting up."
+                exit 1
+              fi
+              ;;
+            000)
+              echo "::error::No response from PowerSync (network error or timeout before any reply)."
+              exit 1
+              ;;
+            *)
+              echo "::error::PowerSync refused the connection (HTTP ${sync_code}). If the instance was deprovisioned, open the PowerSync dashboard and deploy the Sync Streams again."
+              head -c 300 stream.ndjson; echo
+              exit 1
+              ;;
+          esac

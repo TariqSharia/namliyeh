@@ -124,6 +124,12 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
           {mode === 'signin' ? t('noAccount') : t('haveAccount')}
         </button>
       </form>
+
+      <footer className="legal-links">
+        <a href="/privacy">{t('privacyPolicy')}</a>
+        <span aria-hidden="true">·</span>
+        <a href="/terms">{t('termsOfUse')}</a>
+      </footer>
     </div>
   );
 }

@@ -59,6 +59,8 @@ export const en = {
   installIosFirst: 'On iPhone, add it first, then sign in from the new icon. A sign-in made here in the browser does not carry over.',
   installInAppBrowser: 'This page opened inside another app, which cannot install it. Tap ⋯ or ⋮ and choose “Open in browser” (Chrome on Android, Safari on iPhone).',
   notNow: 'Not now',
+  privacyPolicy: 'Privacy policy',
+  termsOfUse: 'Terms of use',
   installShowHow: 'Show me how',
   noAccount: 'New here? Create an account',
   haveAccount: 'Already have an account? Sign in',

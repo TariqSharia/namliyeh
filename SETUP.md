@@ -102,6 +102,27 @@ which counts as activity. It needs two secrets in GitHub, under the repository's
 Never use the secret (`sb_secret_...`) or `service_role` key here. To test it: **Actions →
 Supabase keep-alive → Run workflow**. A green run prints `HTTP 200`. GitHub emails you if a run fails.
 
+### PowerSync keep-alive
+
+PowerSync deprovisions a free instance after 7 days without deploys or client connections.
+`.github/workflows/powersync-keepalive.yml` signs in as a dedicated user every day and opens a
+real sync stream for 20 seconds. That user belongs to no household, so it only receives the
+shared catalog.
+
+1. Supabase → **Authentication → Users → Add user → Create new user**: an email you control
+   (a Gmail "plus" address such as `you+keepalive@gmail.com` works), a long generated password,
+   and **Auto Confirm User** ticked.
+2. Add three more repository secrets:
+
+| Name | Value |
+| --- | --- |
+| `POWERSYNC_URL` | `https://<instance>.powersync.journeyapps.com` |
+| `KEEPALIVE_EMAIL` | the keep-alive user's email |
+| `KEEPALIVE_PASSWORD` | its password |
+
+If an instance was already deprovisioned, open the PowerSync dashboard, deploy the Sync Streams
+again, then run the workflow once.
+
 ## 8. Google sign-in
 
 The Google button appears by itself once Google is turned on in Supabase; no rebuild needed.
@@ -111,5 +132,8 @@ The Google button appears by itself once Google is turned on in Supabase; no reb
    - Authorized JavaScript origins: `https://namliyeh.pages.dev`
    - Authorized redirect URIs: `https://<project-ref>.supabase.co/auth/v1/callback`
 3. **Audience** → **Publish app** (only name and email are requested, which Google does not review).
-4. Supabase → **Authentication → Sign In / Providers → Google**: turn on, paste the client ID and secret, save.
-5. Supabase → **Authentication → URL Configuration**: Site URL `https://namliyeh.pages.dev`, Redirect URL `https://namliyeh.pages.dev/**`.
+4. **Branding**: home page `https://namliyeh.pages.dev`, privacy policy `https://namliyeh.pages.dev/privacy`,
+   terms `https://namliyeh.pages.dev/terms`, authorised domains `namliyeh.pages.dev` and
+   `<project-ref>.supabase.co`. Do not upload a logo: a logo makes Google require a review.
+5. Supabase → **Authentication → Sign In / Providers → Google**: turn on, paste the client ID and secret, save.
+6. Supabase → **Authentication → URL Configuration**: Site URL `https://namliyeh.pages.dev`, Redirect URL `https://namliyeh.pages.dev/**`.

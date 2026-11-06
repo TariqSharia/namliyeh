@@ -221,6 +221,12 @@ export function Settings() {
         </button>
       </section>
 
+      <p className="legal-links">
+        <a href="/privacy">{t('privacyPolicy')}</a>
+        <span aria-hidden="true">·</span>
+        <a href="/terms">{t('termsOfUse')}</a>
+      </p>
+
       <button className="btn danger-ghost wide" onClick={() => void signOut()}>
         {t('signOut')}
       </button>
