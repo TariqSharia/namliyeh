@@ -3,6 +3,7 @@ import { useGoogleEnabled } from '../data/authProviders';
 import { supabase } from '../data/connector';
 import { useLang, useT, type Lang } from '../i18n';
 import { InstallCard } from '../ui/InstallCard';
+import { setPendingLang } from '../app/pendingLang';
 
 /** Google's four-colour G, as required by Google's sign-in button guidelines. */
 function GoogleMark() {
@@ -41,6 +42,7 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    setPendingLang(lang);
     setBusy(true);
     setMessage(null);
     try {
@@ -64,6 +66,7 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
   }
 
   async function google() {
+    setPendingLang(lang);
     setBusy(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

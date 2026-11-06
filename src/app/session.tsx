@@ -55,6 +55,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
 export const useSession = () => useContext(SessionContext);
 
+/** Drop the sync connection and open a fresh one, e.g. after the server's settings changed. */
+export async function reconnect() {
+  await db.disconnect();
+  await db.connect(connector);
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
   await db.disconnectAndClear();

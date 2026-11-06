@@ -17,7 +17,9 @@ import { Use } from '../screens/Use';
 import { ToastProvider } from '../ui/Toast';
 import { HouseholdProvider, useMyHouseholds } from './household';
 import { href, useRoute, type Route } from './router';
-import { signOut, useSession } from './session';
+import { setPendingLang, takePendingLang } from './pendingLang';
+import { useSession } from './session';
+import { SyncWait } from '../ui/SyncWait';
 
 export function App() {
   const { session, ready } = useSession();
@@ -56,15 +58,16 @@ function SignedIn({ userId, fallbackLang }: { userId: string; fallbackLang: Lang
   // A language picked on the sign-in screen wins once the profile exists. This matters for
   // Google sign-ups, which cannot carry the choice the way the email sign-up form does.
   useEffect(() => {
+    if (!profile) return; // wait for the profile to download, or the choice is lost
     const pending = takePendingLang();
-    if (pending && profile && profile.language !== pending) void updateProfile(userId, { language: pending });
+    if (pending && profile.language !== pending) void updateProfile(userId, { language: pending });
   }, [profile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!household) {
     return (
       <LangProvider lang={lang}>
         {/* Wait for the first download before deciding this user has no home yet. */}
-        {status.hasSynced || DEMO ? <Onboarding /> : <Loading />}
+        {status.hasSynced || DEMO ? <Onboarding /> : <SyncWait titleKey="loading" />}
       </LangProvider>
     );
   }
@@ -151,57 +154,3 @@ function Message({ icon, titleKey, hintKey }: { icon: string; titleKey: 'notConf
   );
 }
 
-/**
- * Waiting for the first download. If the sync server refuses the connection, say so and show its
- * error, instead of asking for internet the phone already has; and always offer a way out.
- */
-function Loading() {
-  const t = useT();
-  const status = useStatus();
-  const error = status.dataFlowStatus?.downloadError;
-  const online = typeof navigator === 'undefined' || navigator.onLine;
-  const hint = error && online ? t('syncProblem') : status.connected ? t('loadingHint') : online ? t('loadingHint') : t('firstTimeOnline');
-  return (
-    <main className="auth">
-      <div className="auth-head">
-        <div className="brand-mark" aria-hidden="true">
-          ⏳
-        </div>
-        <h1>{t('loading')}</h1>
-        <p className="lede" role="status">
-          {hint}
-        </p>
-      </div>
-      {error && online && (
-        <details className="error-details">
-          <summary>{t('details')}</summary>
-          <pre dir="ltr">{String(error.message || error)}</pre>
-        </details>
-      )}
-      <button className="btn danger-ghost wide" onClick={() => void signOut()}>
-        {t('signOut')}
-      </button>
-    </main>
-  );
-}
-
-const PENDING_LANG = 'lang-chosen-before-sign-in';
-
-function setPendingLang(l: Lang) {
-  try {
-    localStorage.setItem(PENDING_LANG, l);
-  } catch {
-    /* ignore */
-  }
-}
-
-function takePendingLang(): Lang | null {
-  try {
-    const v = localStorage.getItem(PENDING_LANG);
-    if (v !== 'ar' && v !== 'en') return null;
-    localStorage.removeItem(PENDING_LANG);
-    return v;
-  } catch {
-    return null;
-  }
-}

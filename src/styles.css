@@ -1524,3 +1524,10 @@ input[type='checkbox'][role='switch']:checked::after {
   color: inherit;
   text-decoration: underline;
 }
+
+.sync-progress {
+  inline-size: min(280px, 100%);
+  block-size: 10px;
+  margin-block-start: 8px;
+  accent-color: var(--olive);
+}

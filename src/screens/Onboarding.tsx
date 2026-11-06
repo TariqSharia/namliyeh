@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signOut } from '../app/session';
 import { supabase } from '../data/connector';
 import { CURRENCIES, CURRENCY_CODES, type Currency } from '../data/money';
 import { useLang, useT } from '../i18n';
+import { SyncWait } from '../ui/SyncWait';
 
 /** First time only: make a new home, or join one with the code a family member shares. */
 export function Onboarding() {
@@ -15,6 +16,21 @@ export function Onboarding() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waiting, setWaiting] = useState(false);
+
+  // If the server already has a home for this user (made a moment ago, or on another phone),
+  // wait for it to arrive instead of offering to make a second one.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data } = await supabase.from('household_members').select('household_id').eq('user_id', auth.user.id).limit(1);
+      if (!cancelled && data && data.length > 0) setWaiting(true);
+    })().catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function run(fn: () => PromiseLike<{ error: { message: string } | null }>) {
     if (!navigator.onLine) {
@@ -29,19 +45,7 @@ export function Onboarding() {
     else setWaiting(true); // the new home arrives through sync in a moment
   }
 
-  if (waiting) {
-    return (
-      <div className="auth">
-        <div className="auth-head">
-          <div className="brand-mark" aria-hidden="true">
-            🏡
-          </div>
-          <h1>{t('settingUp')}</h1>
-          <p className="lede">{t('settingUpHint')}</p>
-        </div>
-      </div>
-    );
-  }
+  if (waiting) return <SyncWait titleKey="settingUp" hintKey="settingUpHint" />;
 
   return (
     <div className="auth">

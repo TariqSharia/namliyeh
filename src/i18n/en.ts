@@ -42,6 +42,7 @@ export const en = {
   loadingHint: 'Downloading your items. This takes a moment the first time.',
   syncProblem: 'Could not reach the sync server. Send the details below to whoever set up the app.',
   details: 'Details',
+  tryAgain: 'Try again',
   firstTimeOnline: 'Connect to the internet once so this phone can download your home.',
 
   signIn: 'Sign in',
