@@ -1247,18 +1247,32 @@ input[type='checkbox'][role='switch']:checked::after {
 /* ---------- Sign-in and welcome ---------- */
 
 .auth {
+  display: flex;
+  flex-direction: column;
   min-block-size: 100dvh;
   max-inline-size: 480px;
   margin-inline: auto;
-  padding: calc(env(safe-area-inset-top) + 32px) var(--gutter) 32px;
+  padding: calc(env(safe-area-inset-top) + 12px) var(--gutter) calc(env(safe-area-inset-bottom) + 8px);
 }
 
 .auth-head {
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 4px;
   text-align: center;
-  margin-block-end: 24px;
+  margin-block: 8px 20px;
+}
+
+/* The two sign-in choices sit low on the screen, where the thumb rests. */
+.sign-in-panel {
+  display: grid;
+  gap: 10px;
+  margin-block-start: auto;
+  padding-block-start: 16px;
+}
+
+.sign-in-panel .btn.wide {
+  margin: 0;
 }
 
 .brand-mark {
@@ -1272,32 +1286,36 @@ input[type='checkbox'][role='switch']:checked::after {
 }
 
 .brand-icon {
-  inline-size: 96px;
-  block-size: 96px;
+  inline-size: 80px;
+  block-size: 80px;
+  margin-block-end: 4px;
 }
 
 .auth h1 {
   font-size: 2.2rem;
   font-weight: 600;
+  line-height: 1.15;
 }
 
 .lede {
   color: var(--muted);
-  max-inline-size: 34ch;
+  max-inline-size: 32ch;
+  line-height: 1.5;
 }
 
 .lang-switch {
   display: flex;
-  gap: 8px;
-  margin-block-start: 8px;
+  gap: 6px;
+  align-self: flex-end;
 }
 
 .lang-switch button {
   min-block-size: 44px;
-  padding-inline: 16px;
+  padding-inline: 14px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--surface);
+  font-size: 0.95rem;
 }
 
 .lang-switch button.on {
@@ -1305,6 +1323,50 @@ input[type='checkbox'][role='switch']:checked::after {
   border-color: var(--olive);
   color: var(--surface);
   font-weight: 600;
+}
+
+/* After choosing email: a small header, so the form sits where the eye already is. */
+.auth.focused .auth-head {
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-block: 0 8px;
+}
+
+.auth.focused .brand-icon {
+  inline-size: 44px;
+  block-size: 44px;
+  margin: 0;
+}
+
+.auth.focused h1 {
+  font-size: 1.6rem;
+}
+
+.auth.focused .sign-in-panel {
+  margin-block-start: 0;
+}
+
+.sign-in-panel .link.quiet {
+  justify-self: center;
+}
+
+/* Short phones (small Androids, iPhone SE): shrink the header rather than scroll. */
+@media (max-height: 640px) {
+  .auth.fits .brand-icon {
+    inline-size: 56px;
+    block-size: 56px;
+  }
+  .auth.fits h1 {
+    font-size: 1.8rem;
+  }
+  .auth.fits .auth-head {
+    margin-block: 0 12px;
+  }
+  .auth.fits .lede {
+    display: none;
+  }
 }
 
 .invite {
@@ -1324,33 +1386,33 @@ input[type='checkbox'][role='switch']:checked::after {
 
 .install-card {
   display: grid;
-  gap: 12px;
-  margin-block: 8px 20px;
-  padding: 16px;
-  border: 1px solid var(--saffron);
+  gap: 10px;
+  margin-block: 0 8px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--saffron) 55%, transparent);
   border-radius: var(--radius);
   background: var(--saffron-soft);
 }
 
-.install-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.install-head img {
-  flex: none;
-  border-radius: 12px;
-}
-
-.install-head h2 {
-  font-size: 1.15rem;
+.install-card h2 {
+  font-size: 1.05rem;
   line-height: 1.3;
 }
 
 .install-hint {
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.install-actions .btn {
+  flex: 1;
 }
 
 .install-steps {
@@ -1392,12 +1454,6 @@ input[type='checkbox'][role='switch']:checked::after {
   color: var(--muted);
 }
 
-.google-first {
-  display: grid;
-  gap: 4px;
-  margin-block-end: 8px;
-}
-
 .btn.google {
   background: #fff;
   color: #1f1f1f;
@@ -1405,18 +1461,13 @@ input[type='checkbox'][role='switch']:checked::after {
   gap: 12px;
 }
 
-.or {
-  text-align: center;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
 .legal-links {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
-  margin-block: 20px 8px;
-  font-size: 0.95rem;
+  margin-block: 4px 0;
+  font-size: 0.9rem;
   color: var(--muted);
 }
 

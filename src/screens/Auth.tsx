@@ -16,6 +16,16 @@ function GoogleMark() {
   );
 }
 
+/** An envelope, so the email choice reads as clearly as the Google one. */
+function MailMark() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="m4 7 8 6 8-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /** Sign in with Google (one tap, no new password) or with email and password. */
 export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
   const t = useT();
@@ -27,6 +37,7 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   const googleOn = useGoogleEnabled();
+  const [showEmail, setShowEmail] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,71 +76,88 @@ export function Auth({ onLang }: { onLang: (l: Lang) => void }) {
     }
   }
 
+  const emailForm = (
+    <form className="form" onSubmit={submit}>
+      <h2>{mode === 'signin' ? t('signIn') : t('createAccount')}</h2>
+      {mode === 'signup' && (
+        <label className="field">
+          <span>{t('yourName')}</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
+        </label>
+      )}
+      <label className="field">
+        <span>{t('email')}</span>
+        <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required autoFocus={googleOn} />
+      </label>
+      <label className="field">
+        <span>{t('password')}</span>
+        <input
+          type="password"
+          dir="ltr"
+          value={password}
+          minLength={8}
+          onChange={(e) => setPassword(e.target.value)}
+          autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          required
+        />
+      </label>
+      {message && <p className={message.kind === 'error' ? 'error' : 'info'}>{message.text}</p>}
+      <button className="btn primary wide big" disabled={busy}>
+        {busy ? t('wait') : mode === 'signin' ? t('signIn') : t('createAccount')}
+      </button>
+      <button type="button" className="link" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
+        {mode === 'signin' ? t('noAccount') : t('haveAccount')}
+      </button>
+      {googleOn && (
+        <button type="button" className="link quiet" onClick={() => setShowEmail(false)}>
+          {t('otherWays')}
+        </button>
+      )}
+    </form>
+  );
+
+  // With Google on, the screen offers two equal choices; the email form opens in their place.
+  const choosing = googleOn && !showEmail;
+
   return (
-    <div className="auth">
-      <div className="auth-head">
-        <img className="brand-icon" src="/icons/icon.svg" alt="" width="96" height="96" />
-        <h1>{t('appName')}</h1>
-        <p className="lede">{t('appTagline')}</p>
-        <div className="lang-switch" role="group" aria-label={t('language')}>
-          <button className={lang === 'ar' ? 'on' : ''} onClick={() => onLang('ar')} lang="ar">
-            العربية
-          </button>
-          <button className={lang === 'en' ? 'on' : ''} onClick={() => onLang('en')} lang="en">
-            English
-          </button>
-        </div>
+    <main className={`auth${choosing ? ' fits' : ''}${showEmail ? ' focused' : ''}`}>
+      <div className="lang-switch" role="group" aria-label={t('language')}>
+        <button className={lang === 'ar' ? 'on' : ''} onClick={() => onLang('ar')} lang="ar">
+          العربية
+        </button>
+        <button className={lang === 'en' ? 'on' : ''} onClick={() => onLang('en')} lang="en">
+          English
+        </button>
       </div>
 
-      <InstallCard where="welcome" />
+      <header className="auth-head">
+        <img className="brand-icon" src="/icons/icon.svg" alt="" width="80" height="80" />
+        <h1>{t('appName')}</h1>
+        {!showEmail && <p className="lede">{t('appTagline')}</p>}
+      </header>
 
-      {googleOn && (
-        <div className="google-first">
-          <button type="button" className="btn google wide big" onClick={google} disabled={busy}>
-            <GoogleMark /> {t('withGoogle')}
-          </button>
-          <p className="or">{t('orWithEmail')}</p>
-        </div>
-      )}
+      {!showEmail && <InstallCard where="welcome" />}
 
-      <form className="card form" onSubmit={submit}>
-        <h2>{mode === 'signin' ? t('signIn') : t('createAccount')}</h2>
-        {mode === 'signup' && (
-          <label className="field">
-            <span>{t('yourName')}</span>
-            <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
-          </label>
+      <section className="sign-in-panel" aria-label={t('signIn')}>
+        {choosing ? (
+          <>
+            {message && <p className="error">{message.text}</p>}
+            <button type="button" className="btn google wide big" onClick={google} disabled={busy}>
+              <GoogleMark /> {t('withGoogle')}
+            </button>
+            <button type="button" className="btn wide big" onClick={() => setShowEmail(true)}>
+              <MailMark /> {t('withEmail')}
+            </button>
+          </>
+        ) : (
+          emailForm
         )}
-        <label className="field">
-          <span>{t('email')}</span>
-          <input type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
-        </label>
-        <label className="field">
-          <span>{t('password')}</span>
-          <input
-            type="password"
-            dir="ltr"
-            value={password}
-            minLength={8}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            required
-          />
-        </label>
-        {message && <p className={message.kind === 'error' ? 'error' : 'info'}>{message.text}</p>}
-        <button className="btn primary wide" disabled={busy}>
-          {busy ? t('wait') : mode === 'signin' ? t('signIn') : t('createAccount')}
-        </button>
-        <button type="button" className="link" onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}>
-          {mode === 'signin' ? t('noAccount') : t('haveAccount')}
-        </button>
-      </form>
-
-      <footer className="legal-links">
-        <a href="/privacy">{t('privacyPolicy')}</a>
-        <span aria-hidden="true">·</span>
-        <a href="/terms">{t('termsOfUse')}</a>
-      </footer>
-    </div>
+        <footer className="legal-links">
+          <a href="/privacy">{t('privacyPolicy')}</a>
+          <span aria-hidden="true">·</span>
+          <a href="/terms">{t('termsOfUse')}</a>
+        </footer>
+      </section>
+    </main>
   );
 }
