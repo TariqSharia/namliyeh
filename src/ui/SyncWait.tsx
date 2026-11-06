@@ -51,6 +51,8 @@ export function SyncWait({ titleKey, hintKey = 'loadingHint' }: { titleKey: 'loa
     `online=${online}`,
     `connecting=${status.connecting}`,
     `connected=${status.connected}`,
+    `hasSynced=${status.hasSynced}`,
+    `lastSynced=${status.lastSyncedAt ? status.lastSyncedAt.toISOString().slice(11, 19) : 'never'}`,
     `downloading=${Boolean(status.dataFlowStatus?.downloading)}`,
     progress ? `progress=${progress.downloadedOperations}/${progress.totalOperations}` : 'progress=none',
     `streams=${(status.syncStreams ?? []).map((st) => `${st.subscription.name}:${st.subscription.hasSynced ? 'synced' : 'waiting'}`).join(',') || 'none'}`,
