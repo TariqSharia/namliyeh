@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useT } from '../i18n';
+import { Icon } from './Icon';
 
 /** A panel that slides up from the bottom, closed by the close button, the backdrop, or the back key. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
@@ -31,7 +32,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
         <div className="sheet-head">
           <h2>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label={t('close')}>
-            ✕
+            <Icon name="close" size={22} />
           </button>
         </div>
         {children}

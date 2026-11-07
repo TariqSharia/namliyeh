@@ -5,7 +5,7 @@ type ToastData = { id: number; message: string; undo?: () => Promise<void> | voi
 
 const ToastContext = createContext<(message: string, undo?: ToastData['undo']) => void>(() => {});
 
-/** Every action shows what happened and offers Undo for a few seconds, so a wrong tap is never scary. */
+/** Every action shows what happened and offers Undo for ten seconds (time enough for older hands), so a wrong tap is never scary. */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<ToastData | null>(null);
   const timer = useRef<number | undefined>(undefined);
@@ -14,7 +14,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const show = useCallback((message: string, undo?: ToastData['undo']) => {
     window.clearTimeout(timer.current);
     setToast({ id: Date.now(), message, undo });
-    timer.current = window.setTimeout(() => setToast(null), undo ? 6000 : 2500);
+    timer.current = window.setTimeout(() => setToast(null), undo ? 10_000 : 3000);
   }, []);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);

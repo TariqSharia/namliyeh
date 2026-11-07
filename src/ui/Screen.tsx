@@ -33,7 +33,7 @@ export function Screen({
         {action ?? <SyncDot />}
       </header>
       <main className="content">{children}</main>
-      {footer && <div className="footer-bar">{footer}</div>}
+      {footer && <footer className="footer-bar">{footer}</footer>}
     </div>
   );
 }
@@ -51,7 +51,7 @@ export function SyncDot() {
   );
 }
 
-export function Empty({ icon, title, children }: { icon: string; title: string; children?: ReactNode }) {
+export function Empty({ icon, title, children }: { icon: ReactNode; title: string; children?: ReactNode }) {
   return (
     <div className="empty">
       <div className="empty-icon" aria-hidden="true">

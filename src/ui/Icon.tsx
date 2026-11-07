@@ -78,6 +78,12 @@ const PATHS = {
       <path d="M5 19h14" />
     </>
   ),
+  key: (
+    <>
+      <circle cx="8" cy="15" r="4" />
+      <path d="m11 12 9-9M17 6l3 3M15 8l2 2" />
+    </>
+  ),
   person: (
     <>
       <circle cx="12" cy="8" r="4" />

@@ -4,6 +4,7 @@ import { supabase } from '../data/connector';
 import { CURRENCIES, CURRENCY_CODES, type Currency } from '../data/money';
 import { useLang, useT } from '../i18n';
 import { SyncWait } from '../ui/SyncWait';
+import { Icon } from '../ui/Icon';
 
 /** First time only: make a new home, or join one with the code a family member shares. */
 export function Onboarding() {
@@ -50,9 +51,7 @@ export function Onboarding() {
   return (
     <div className="auth">
       <div className="auth-head">
-        <div className="brand-mark" aria-hidden="true">
-          🏡
-        </div>
+        <img className="brand-icon" src="/icons/icon.svg" alt="" width="80" height="80" />
         <h1>{t('welcome')}</h1>
         <p className="lede">{t('onboardingLede')}</p>
       </div>
@@ -60,14 +59,14 @@ export function Onboarding() {
       {mode === 'choose' && (
         <div className="stack">
           <button className="big-tile bought" onClick={() => setMode('create')}>
-            <span className="big-icon" aria-hidden="true">
-              🏠
+            <span className="big-icon">
+              <Icon name="home" size={28} />
             </span>
             <span className="big-label">{t('newHome')}</span>
           </button>
           <button className="big-tile used" onClick={() => setMode('join')}>
-            <span className="big-icon" aria-hidden="true">
-              🔑
+            <span className="big-icon">
+              <Icon name="key" size={28} />
             </span>
             <span className="big-label">{t('joinHome')}</span>
           </button>

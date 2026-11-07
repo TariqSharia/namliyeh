@@ -6,7 +6,9 @@ import { addCatalogItem, addStore, recordPurchase, undoPurchase } from '../data/
 import { today } from '../data/dates';
 import { CURRENCIES, CURRENCY_CODES, formatMoney, parseAmount, toPlain, type Currency } from '../data/money';
 import { CATEGORIES, ITEMS_WITH_STOCK, LAST_PRICES, MY_STORES, NEED_TO_BUY } from '../data/queries';
-import { nameOf, useLang, useT, type Key } from '../i18n';
+import { nameOf, numberFmt, useLang, useT, type Key } from '../i18n';
+import { Icon } from '../ui/Icon';
+import { ItemArt } from '../ui/ItemArt';
 import { ItemPicker, type Category, type PickerItem } from '../ui/ItemPicker';
 import { Screen } from '../ui/Screen';
 import { Sheet } from '../ui/Sheet';
@@ -18,6 +20,8 @@ type Line = {
   itemId: string | null;
   name: string;
   icon: string;
+  /** English catalog name, to find the item's drawing. */
+  nameEn?: string | null;
   quantity: number;
   price: string;
   expiryType: string;
@@ -67,6 +71,13 @@ export function Buy() {
   const [addingStore, setAddingStore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Fields the person has left: their mistakes show right there, and clear as soon as they are fixed.
+  const [left, setLeft] = useState<Set<string>>(() => new Set());
+  const [tried, setTried] = useState(false);
+  const [pickingCurrency, setPickingCurrency] = useState(false);
+  const leave = (key: string) => setLeft((s) => new Set(s).add(key));
+  const badPriceOf = (l: Line) => Boolean(l.price.trim()) && parseAmount(l.price, currency) == null;
+  const badTotal = Boolean(total.trim()) && parseAmount(total, currency) == null;
 
   const lastPrice = (itemId: string) => lastPrices.find((p) => p.item_id === itemId && p.currency === currency);
 
@@ -82,6 +93,7 @@ export function Buy() {
           itemId: item.id,
           name: nameOf(item, lang),
           icon: item.icon,
+          nameEn: item.name_en,
           quantity: 1,
           price: lp ? toPlain(lp.unit_price, currency) : '',
           expiryType: info.get(item.id)?.expiry_type ?? 'none',
@@ -94,7 +106,7 @@ export function Buy() {
   function addOneOff(name: string) {
     setLines((ls) => [
       ...ls,
-      { key: crypto.randomUUID(), itemId: null, name, icon: '🧾', quantity: 1, price: '', expiryType: 'none', printedExpiry: '' }
+      { key: crypto.randomUUID(), itemId: null, name, icon: '📝', quantity: 1, price: '', expiryType: 'none', printedExpiry: '' }
     ]);
   }
 
@@ -110,6 +122,7 @@ export function Buy() {
 
   async function save() {
     setError(null);
+    setTried(true);
     const parsedTotal = total.trim() ? parseAmount(total, currency) : null;
     if (total.trim() && parsedTotal == null) return setError(t('badAmount'));
     const badPrice = lines.find((l) => l.price.trim() && parseAmount(l.price, currency) == null);
@@ -146,20 +159,22 @@ export function Buy() {
       title={t('iBought')}
       footer={
         <div className="buy-footer">
-          <label className="total-field">
-            <span>{t('total')}</span>
+          <div className={`total-field${badTotal && (tried || left.has('total')) ? ' invalid' : ''}`}>
+            <label htmlFor="trip-total">{t('total')}</label>
             <input
+              id="trip-total"
               inputMode="decimal"
               dir="ltr"
               value={total}
               onChange={(e) => setTotal(e.target.value)}
+              onBlur={() => leave('total')}
               placeholder={pricedSum ? toPlain(pricedSum, currency) : t('optional')}
-              aria-label={t('total')}
+              aria-invalid={badTotal || undefined}
             />
-            <span className="unit">{CURRENCIES[currency].symbol}</span>
-          </label>
+            <CurrencyButton currency={currency} enabled={moneyOn} onPick={() => setPickingCurrency(true)} />
+          </div>
           <button className="btn primary big" disabled={!lines.length || saving} onClick={save}>
-            {saving ? t('wait') : t('saveTrip')}
+            {saving ? t('wait') : lines.length ? t('saveN', { n: numberFmt(lines.length, lang) }) : t('saveTrip')}
           </button>
         </div>
       }
@@ -173,25 +188,29 @@ export function Buy() {
             {lines.map((l) => (
               <li key={l.key} className="row line">
                 <div className="row-main static">
-                  <span className="row-icon" aria-hidden="true">
-                    {l.icon}
-                  </span>
+                  <ItemArt nameEn={l.nameEn} icon={l.icon} name={l.name} size={44} />
                   <span className="row-title">{l.name}</span>
                   <button className="icon-btn quiet" onClick={() => remove(l.key)} aria-label={t('removeName', { name: l.name })}>
-                    ✕
+                    <Icon name="close" size={20} />
                   </button>
                 </div>
                 <div className="line-controls">
                   <Stepper value={l.quantity} min={0.5} step={l.quantity < 1 ? 0.5 : 1} onChange={(v) => update(l.key, { quantity: v })} label={t('quantityOf', { name: l.name })} />
-                  <label className="mini-field">
+                  <label className={`mini-field${badPriceOf(l) && (tried || left.has(l.key)) ? ' invalid' : ''}`}>
                     <span>{t('priceEach')}</span>
-                    <input
-                      inputMode="decimal"
-                      dir="ltr"
-                      value={l.price}
-                      onChange={(e) => update(l.key, { price: e.target.value })}
-                      placeholder={t('optional')}
-                    />
+                    <span className="mini-input">
+                      <input
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={l.price}
+                        onChange={(e) => update(l.key, { price: e.target.value })}
+                        onBlur={() => leave(l.key)}
+                        placeholder={t('optional')}
+                        aria-invalid={badPriceOf(l) || undefined}
+                        aria-describedby={badPriceOf(l) ? `err-${l.key}` : undefined}
+                      />
+                      <span className="unit">{CURRENCIES[currency].symbol}</span>
+                    </span>
                   </label>
                   {(l.itemId ? (info.get(l.itemId)?.expiry_type ?? l.expiryType) : l.expiryType) === 'printed' && (
                     <label className="mini-field">
@@ -200,6 +219,11 @@ export function Buy() {
                     </label>
                   )}
                 </div>
+                {badPriceOf(l) && (tried || left.has(l.key)) && (
+                  <p id={`err-${l.key}`} className="field-error">
+                    {t('badAmount')}
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -216,22 +240,13 @@ export function Buy() {
           </button>
           {stores.map((s) => (
             <button key={s.id} className={`chip${storeId === s.id ? ' on' : ''}`} onClick={() => setStoreId(s.id)} aria-pressed={storeId === s.id}>
-              🏪 {s.nickname || nameOf(s, lang)}
+              {s.nickname || nameOf(s, lang)}
             </button>
           ))}
           <button className="chip add" onClick={() => setAddingStore(true)}>
-            ➕ {t('addShop')}
+            <Icon name="plus" size={18} /> {t('addShop')}
           </button>
         </div>
-        {moneyOn && (
-          <div className="chips currency-row">
-            {CURRENCY_CODES.map((c) => (
-              <button key={c} className={`chip${c === currency ? ' on' : ''}`} onClick={() => setCurrency(c)} aria-pressed={c === currency}>
-                {CURRENCIES[c].symbol} {t(`currency_${c}` as Key)}
-              </button>
-            ))}
-          </div>
-        )}
         {moneyOn && currency !== household.main_currency && (
           <label className="field inline">
             <span>{t('rateLabel', { from: CURRENCIES[currency].symbol, to: CURRENCIES[household.main_currency].symbol })}</span>
@@ -245,18 +260,11 @@ export function Buy() {
           <h2 id="need-h" className="section-title">
             {t('fromYourList')}
           </h2>
-          <div className="tile-grid">
+          <div className="chips">
             {needTiles.map((n) => (
-              <button
-                key={n.item_id}
-               
-                className="tile need-tile"
-                onClick={() => addItem({ id: n.item_id!, name_en: n.name_en, name_ar: n.name_ar, icon: n.icon })}
-              >
-                <span className="tile-icon" aria-hidden="true">
-                  {n.icon}
-                </span>
-                <span className="tile-label">{nameOf(n, lang)}</span>
+              <button key={n.item_id} className="chip from-list" onClick={() => addItem({ id: n.item_id!, name_en: n.name_en, name_ar: n.name_ar, icon: n.icon })}>
+                <ItemArt nameEn={n.name_en} icon={n.icon} name={nameOf(n, lang)} size={32} />
+                {nameOf(n, lang)}
               </button>
             ))}
           </div>
@@ -290,6 +298,26 @@ export function Buy() {
             setNewName(null);
           }}
         />
+      )}
+      {pickingCurrency && (
+        <Sheet title={t('currencyOfTrip')} onClose={() => setPickingCurrency(false)}>
+          <div className="choice-list">
+            {CURRENCY_CODES.map((c) => (
+              <button
+                key={c}
+                className={`choice${c === currency ? ' on' : ''}`}
+                aria-pressed={c === currency}
+                onClick={() => {
+                  setCurrency(c);
+                  setPickingCurrency(false);
+                }}
+              >
+                <span className="choice-symbol">{CURRENCIES[c].symbol}</span>
+                {t(`currency_${c}` as Key)}
+              </button>
+            ))}
+          </div>
+        </Sheet>
       )}
       {addingStore && (
         <AddStoreSheet
@@ -337,7 +365,7 @@ export function NewItemSheet({
       </label>
       {onOneOff && (
         <button className="btn ghost wide" onClick={() => onOneOff(value.trim())} disabled={!value.trim()}>
-          🧾 {t('justThisOnce')}
+          {t('justThisOnce')}
         </button>
       )}
       <p className="hint">{t('orAddToHome')}</p>
@@ -364,10 +392,10 @@ export function NewItemSheet({
         <legend>{t('howToTrack')}</legend>
         <div className="chips">
           <button className={`chip${mode === 'counted' ? ' on' : ''}`} onClick={() => setMode('counted')} aria-pressed={mode === 'counted'}>
-            🔢 {t('trackCount')}
+            {t('trackCount')}
           </button>
           <button className={`chip${mode === 'level' ? ' on' : ''}`} onClick={() => setMode('level')} aria-pressed={mode === 'level'}>
-            🫙 {t('trackLevel')}
+            {t('trackLevel')}
           </button>
         </div>
       </fieldset>
@@ -417,5 +445,16 @@ function AddStoreSheet({ onClose, onAdded }: { onClose: () => void; onAdded: (id
         </button>
       </form>
     </Sheet>
+  );
+}
+
+/** The currency symbol beside an amount. With money tracking on, tapping it changes the trip's currency. */
+function CurrencyButton({ currency, enabled, onPick }: { currency: Currency; enabled: boolean; onPick: () => void }) {
+  const t = useT();
+  if (!enabled) return <span className="unit">{CURRENCIES[currency].symbol}</span>;
+  return (
+    <button type="button" className="unit unit-btn" onClick={onPick} aria-label={t('changeCurrency', { name: t(`currency_${currency}` as Key) })}>
+      {CURRENCIES[currency].symbol}
+    </button>
   );
 }

@@ -5,11 +5,13 @@ import { addLabel, addToList, correctStock, setLevel, setLocation, setMinimum, t
 import { today } from '../data/dates';
 import { BATCHES_FOR_ITEM, ITEMS_WITH_STOCK } from '../data/queries';
 import { dateFmt, nameOf, numberFmt, useLang, useT } from '../i18n';
+import { Icon } from '../ui/Icon';
+import { ItemArt } from '../ui/ItemArt';
 import { Screen } from '../ui/Screen';
 import { Stepper } from '../ui/Stepper';
 import { useToast } from '../ui/Toast';
 import { PREFILL_KEY } from './Buy';
-import { LEVEL_ICON, type StockRow } from './Use';
+import type { StockRow } from './Use';
 
 type Detail = StockRow & {
   expiry_type: string;
@@ -59,7 +61,10 @@ export function ItemDetail({ id }: { id: string }) {
   const counted = item.tracking_mode === 'counted';
 
   return (
-    <Screen title={`${item.icon} ${name}`}>
+    <Screen title={name}>
+      <div className="item-hero">
+        <ItemArt nameEn={item.name_en} icon={item.icon} name={name} size={96} />
+      </div>
       {item.status === 'pending' && <p className="hint">{t('pendingItem')}</p>}
 
       <section className="section card">
@@ -93,7 +98,6 @@ export function ItemDetail({ id }: { id: string }) {
                   toast(t('levelSet', { name, level: t(`level_${l}`) }), () => undoLevel(ctx, id, res.previous, res.movementIds));
                 }}
               >
-                <span aria-hidden="true">{LEVEL_ICON[l]}</span>
                 <span className="level-text">{t(`level_${l}`)}</span>
               </button>
             ))}
@@ -180,19 +184,19 @@ export function ItemDetail({ id }: { id: string }) {
             toast(t('addedNameToList', { name }));
           }}
         >
-          📝 {t('addToList')}
+          <Icon name="list" size={20} /> {t('addToList')}
         </button>
         <button
           className="btn ghost wide"
           onClick={() => {
             sessionStorage.setItem(
               PREFILL_KEY,
-              JSON.stringify([{ key: crypto.randomUUID(), itemId: id, name, icon: item.icon, quantity: 1, price: '', expiryType: item.expiry_type, printedExpiry: '' }])
+              JSON.stringify([{ key: crypto.randomUUID(), itemId: id, name, icon: item.icon, nameEn: item.name_en, quantity: 1, price: '', expiryType: item.expiry_type, printedExpiry: '' }])
             );
             window.location.hash = '#/buy';
           }}
         >
-          🛒 {t('iBoughtThis')}
+          <Icon name="bagPlus" size={20} /> {t('iBoughtThis')}
         </button>
       </div>
     </Screen>

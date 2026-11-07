@@ -6,6 +6,7 @@ import { monthStart, nextMonthStart, today } from '../data/dates';
 import { CURRENCIES, CURRENCY_CODES, formatMoney, isCurrency, parseAmount, type Currency } from '../data/money';
 import { MONTH_BY_CATEGORY, MONTH_BY_PERSON, MONTH_TOTALS, MONTH_TRANSACTIONS, MONTH_WASTE } from '../data/queries';
 import { dateFmt, useLang, useT, type Key } from '../i18n';
+import { Icon } from '../ui/Icon';
 import { Empty, Screen } from '../ui/Screen';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toast';
@@ -40,6 +41,8 @@ export function Money() {
   const { household, ctx } = useHousehold();
   const [month, setMonth] = useState(monthStart(today()));
   const [adding, setAdding] = useState<'income' | 'expense' | null>(null);
+  const [open, setOpen] = useState<Tx | null>(null);
+  const sep = lang === 'ar' ? '، ' : ', ';
   const range = [ctx.householdId, month, nextMonthStart(month)];
   const cur = household.main_currency;
   const money = (n: number) => formatMoney(n, cur, lang);
@@ -53,7 +56,7 @@ export function Money() {
   if (!household.money_enabled) {
     return (
       <Screen title={t('money')} showBack={false}>
-        <Empty icon="💰" title={t('moneyOff')}>
+        <Empty icon={<Icon name="wallet" size={40} />} title={t('moneyOff')}>
           <a className="btn primary" href="#/settings">
             {t('turnOnInSettings')}
           </a>
@@ -65,44 +68,42 @@ export function Money() {
   const expenses = byCat.filter((c) => c.type === 'expense');
   const maxExpense = Math.max(1, ...expenses.map((c) => c.total));
   const left = totals.income - totals.expense;
+  const titleOf = (x: Tx) => x.note || x.category_name || (x.purchase_id ? t('shoppingTrip') : t('noCategory'));
 
   return (
     <Screen title={t('money')} showBack={false}>
       <div className="month-switch">
         <button className="icon-btn" onClick={() => setMonth(shiftMonth(month, -1))} aria-label={t('previousMonth')}>
-          <span className="flip" aria-hidden="true">
-            ‹
-          </span>
+          <Icon name="back" />
         </button>
         <span className="month-name">{dateFmt(month, lang, { month: 'long', year: 'numeric' })}</span>
         <button className="icon-btn" onClick={() => setMonth(shiftMonth(month, 1))} aria-label={t('nextMonth')} disabled={month >= monthStart(today())}>
-          <span className="flip" aria-hidden="true">
-            ›
-          </span>
+          <Icon name="forward" />
         </button>
       </div>
 
-      <div className="totals">
-        <div className="total in">
-          <span className="total-label">{t('moneyIn')}</span>
-          <span className="total-value">{money(totals.income)}</span>
-        </div>
-        <div className="total out">
-          <span className="total-label">{t('moneyOut')}</span>
-          <span className="total-value">{money(totals.expense)}</span>
-        </div>
-        <div className={`total left${left < 0 ? ' negative' : ''}`}>
-          <span className="total-label">{left < 0 ? t('overspent') : t('moneySaved')}</span>
-          <span className="total-value">{money(Math.abs(left))}</span>
+      {/* What is left is the number people look for; in and out sit under it. */}
+      <div className={`money-card${left < 0 ? ' negative' : ''}`}>
+        <span className="money-card-label">{left < 0 ? t('overspent') : t('moneySaved')}</span>
+        <span className="money-card-value">{money(Math.abs(left))}</span>
+        <div className="money-card-split">
+          <span>
+            <span className="money-card-small">{t('moneyIn')}</span>
+            <span className="money-card-amount">{money(totals.income)}</span>
+          </span>
+          <span>
+            <span className="money-card-small">{t('moneyOut')}</span>
+            <span className="money-card-amount">{money(totals.expense)}</span>
+          </span>
         </div>
       </div>
 
       <div className="add-row">
         <button className="btn big income" onClick={() => setAdding('income')}>
-          ➕ {t('moneyIn')}
+          <Icon name="plus" /> {t('moneyIn')}
         </button>
         <button className="btn big expense" onClick={() => setAdding('expense')}>
-          ➖ {t('moneyOut')}
+          <Icon name="minus" /> {t('moneyOut')}
         </button>
       </div>
 
@@ -112,9 +113,7 @@ export function Money() {
           <ul className="bars">
             {expenses.map((c) => (
               <li key={c.id ?? 'none'} className="bar-row">
-                <span className="bar-label">
-                  {c.icon ?? '🧾'} {c.name ?? t('noCategory')}
-                </span>
+                <span className="bar-label">{c.name ?? t('noCategory')}</span>
                 <span className="bar-track" aria-hidden="true">
                   <span className="bar-fill" style={{ inlineSize: `${(c.total / maxExpense) * 100}%` }} />
                 </span>
@@ -139,7 +138,11 @@ export function Money() {
         </section>
       )}
 
-      {waste > 0 && <p className="waste-note">🗑️ {t('wasteValue', { amount: money(waste) })}</p>}
+      {waste > 0 && (
+        <p className="waste-note">
+          <Icon name="trash" size={20} /> {t('wasteValue', { amount: money(waste) })}
+        </p>
+      )}
 
       <section className="section">
         <h2 className="section-title">{t('entries')}</h2>
@@ -149,38 +152,52 @@ export function Money() {
           <ul className="rows">
             {recent.map((x) => (
               <li key={x.id} className="row">
-                <div className="row-main static">
-                  <span className="row-icon" aria-hidden="true">
-                    {x.category_icon ?? (x.purchase_id ? '🛒' : '🧾')}
+                <button className="row-main" onClick={() => setOpen(x)}>
+                  <span className="row-icon line-icon">
+                    <Icon name={x.purchase_id ? 'bagCheck' : x.type === 'income' ? 'briefcase' : 'wallet'} size={22} />
                   </span>
                   <span className="row-text">
-                    <span className="row-title">{x.note || x.category_name || (x.purchase_id ? t('shoppingTrip') : t('noCategory'))}</span>
+                    <span className="row-title">{titleOf(x)}</span>
                     <span className="row-sub">
                       {dateFmt(x.date, lang)}
-                      {x.person ? ` · ${x.person}` : ''}
-                      {x.currency !== cur && isCurrency(x.currency) ? ` · ${formatMoney(x.amount, x.currency, lang)}` : ''}
+                      {x.person ? `${sep}${x.person}` : ''}
+                      {x.currency !== cur && isCurrency(x.currency) ? `${sep}${formatMoney(x.amount, x.currency, lang)}` : ''}
                     </span>
                   </span>
-                  <span className={`row-value ${x.type}`}>
+                  <span className={`row-value ${x.type}`} dir="ltr">
                     {x.type === 'income' ? '+' : '−'}
                     {money(x.amount_main)}
                   </span>
-                </div>
-                <button
-                  className="icon-btn quiet"
-                  aria-label={t('deleteEntry')}
-                  onClick={async () => {
-                    await setTransactionDeleted(ctx, x.id, true);
-                    toast(t('entryDeleted'), () => setTransactionDeleted(ctx, x.id, false));
-                  }}
-                >
-                  🗑️
                 </button>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {open && (
+        <Sheet title={titleOf(open)} onClose={() => setOpen(null)}>
+          <p className={`big-number ${open.type}`} dir="ltr">
+            {open.type === 'income' ? '+' : '−'}
+            {money(open.amount_main)}
+          </p>
+          <p className="hint">
+            {dateFmt(open.date, lang)}
+            {open.person ? `${sep}${open.person}` : ''}
+          </p>
+          <button
+            className="btn danger-ghost wide"
+            onClick={async () => {
+              const x = open;
+              setOpen(null);
+              await setTransactionDeleted(ctx, x.id, true);
+              toast(t('deletedNamed', { name: `${titleOf(x)} ${money(x.amount_main)}` }), () => setTransactionDeleted(ctx, x.id, false));
+            }}
+          >
+            <Icon name="trash" size={20} /> {t('deleteEntry')}
+          </button>
+        </Sheet>
+      )}
 
       {adding && <AddMoneySheet type={adding} onClose={() => setAdding(null)} />}
     </Screen>
@@ -242,7 +259,7 @@ function AddMoneySheet({ type, onClose }: { type: 'income' | 'expense'; onClose:
           <div className="chips">
             {cats.map((c) => (
               <button type="button" key={c.id} className={`chip${categoryId === c.id ? ' on' : ''}`} onClick={() => setCategoryId(c.id)} aria-pressed={categoryId === c.id}>
-                {c.icon} {c.name}
+                {c.name}
               </button>
             ))}
           </div>

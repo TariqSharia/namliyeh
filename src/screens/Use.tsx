@@ -6,6 +6,8 @@ import { setLevel, takeFromStock, undoLevel, undoMovements } from '../data/actio
 import { CATEGORIES, IN_STOCK } from '../data/queries';
 import { nameOf, numberFmt, useLang, useT } from '../i18n';
 import type { Category } from '../ui/ItemPicker';
+import { Icon } from '../ui/Icon';
+import { ItemArt } from '../ui/ItemArt';
 import { Empty, Screen } from '../ui/Screen';
 import { matches } from '../ui/search';
 import { useToast } from '../ui/Toast';
@@ -23,7 +25,7 @@ export type StockRow = {
 };
 
 const LEVELS = ['full', 'half', 'low', 'out'] as const;
-export const LEVEL_ICON = { full: '🟩', half: '🟨', low: '🟧', out: '⬜' } as const;
+export type Level = (typeof LEVELS)[number];
 
 /** What we have at home, grouped like the pantry. One tap per thing used; Undo for mistakes. */
 export function Use() {
@@ -59,22 +61,22 @@ export function Use() {
     <Screen title={t('iUsed')}>
       <div className="segmented" role="radiogroup" aria-label={t('whatHappened')}>
         <button role="radio" aria-checked={mode === 'use'} className={mode === 'use' ? 'on' : ''} onClick={() => setMode('use')}>
-          🍽️ {t('used')}
+          <Icon name="bagMinus" size={20} /> {t('used')}
         </button>
         <button role="radio" aria-checked={mode === 'waste'} className={mode === 'waste' ? 'on waste' : ''} onClick={() => setMode('waste')}>
-          🗑️ {t('thrownAway')}
+          <Icon name="trash" size={20} /> {t('thrownAway')}
         </button>
       </div>
 
       {rows.length > 8 && (
         <label className="search">
-          <span aria-hidden="true">🔎</span>
+          <Icon name="search" size={22} />
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('searchPlaceholder')} aria-label={t('search')} />
         </label>
       )}
 
       {rows.length === 0 && (
-        <Empty icon="🧺" title={t('nothingAtHome')}>
+        <Empty icon={<Icon name="box" size={40} />} title={t('nothingAtHome')}>
           <a className="btn primary" href="#/buy">
             {t('iBought')}
           </a>
@@ -84,15 +86,13 @@ export function Use() {
       {groups.map((g) => (
         <section key={g.category.id} className="section">
           <h2 className="section-title">
-            {g.category.icon} {nameOf(g.category, lang)}
+            {nameOf(g.category, lang)}
           </h2>
           <ul className="rows">
             {g.rows.map((r) => (
               <li key={r.id} className="row">
                 <button className="row-main" onClick={() => go({ name: 'item', id: r.id })}>
-                  <span className="row-icon" aria-hidden="true">
-                    {r.icon}
-                  </span>
+                  <ItemArt nameEn={r.name_en} icon={r.icon} name={nameOf(r, lang)} size={44} />
                   <span className="row-text">
                     <span className="row-title">{nameOf(r, lang)}</span>
                     <span className="row-sub">
@@ -119,7 +119,6 @@ export function Use() {
                         onClick={() => void level(r, l)}
                         title={t(`level_${l}`)}
                       >
-                        <span aria-hidden="true">{LEVEL_ICON[l]}</span>
                         <span className="level-text">{t(`level_${l}`)}</span>
                       </button>
                     ))}

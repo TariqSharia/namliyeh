@@ -10,7 +10,9 @@ import { Empty, Screen } from '../ui/Screen';
 import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toast';
 import { PREFILL_KEY } from './Buy';
-import { LEVEL_ICON } from './Use';
+import type { Level } from './Use';
+import { Icon } from '../ui/Icon';
+import { ItemArt } from '../ui/ItemArt';
 
 type NeedRow = {
   source: 'auto' | 'manual';
@@ -21,7 +23,7 @@ type NeedRow = {
   icon: string;
   stock: number | null;
   min_quantity: number | null;
-  current_level: keyof typeof LEVEL_ICON | null;
+  current_level: Level | null;
   tracking_mode: 'counted' | 'level' | null;
   free_text: string | null;
 };
@@ -61,32 +63,30 @@ export function Need() {
       footer={
         rows.some((r) => r.item_id) ? (
           <button className="btn primary big wide" onClick={startTrip}>
-            🛒 {t('iBoughtThese')}
+            <Icon name="bagCheck" /> {t('iBoughtThese')}
           </button>
         ) : undefined
       }
     >
       <button className="btn ghost wide" onClick={() => setAdding(true)}>
-        ➕ {t('addToList')}
+        <Icon name="plus" size={20} /> {t('addToList')}
       </button>
 
       {rows.length === 0 ? (
-        <Empty icon="✅" title={t('needNone')} />
+        <Empty icon={<Icon name="list" size={40} />} title={t('needNone')} />
       ) : (
         <ul className="rows checklist">
           {rows.map((r) => (
             <li key={r.entry_id ?? r.item_id} className="row">
               <button className="row-main" onClick={() => r.item_id && go({ name: 'item', id: r.item_id })}>
-                <span className="row-icon" aria-hidden="true">
-                  {r.icon}
-                </span>
+                <ItemArt nameEn={r.name_en} icon={r.icon} name={label(r)} size={44} />
                 <span className="row-text">
                   <span className="row-title">{label(r)}</span>
                   <span className="row-sub">
                     {r.source === 'manual'
                       ? t('addedByHand')
                       : r.tracking_mode === 'level' && r.current_level
-                        ? `${LEVEL_ICON[r.current_level]} ${t(`level_${r.current_level}`)}`
+                        ? t(`level_${r.current_level}`)
                         : t('haveOfMin', { n: numberFmt(r.stock ?? 0, lang), min: numberFmt(r.min_quantity ?? 0, lang) })}
                   </span>
                 </span>
@@ -100,7 +100,7 @@ export function Need() {
                     toast(t('removedFromList'));
                   }}
                 >
-                  ✕
+                  <Icon name="close" size={20} />
                 </button>
               )}
             </li>

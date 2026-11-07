@@ -1,6 +1,8 @@
 import { useQuery } from '@powersync/react';
 import { useMemo, useState } from 'react';
 import { CATEGORIES } from '../data/queries';
+import { Icon } from './Icon';
+import { ItemArt } from './ItemArt';
 import { nameOf, useLang, useT } from '../i18n';
 import { matches } from './search';
 
@@ -67,7 +69,7 @@ export function ItemPicker({
   return (
     <div className="picker">
       <label className="search">
-        <span aria-hidden="true">🔎</span>
+        <Icon name="search" size={22} />
         <input
           type="search"
           value={query}
@@ -83,9 +85,7 @@ export function ItemPicker({
         <div className="tile-grid">
           {tops.map((c) => (
             <button key={c.id} className="tile" onClick={() => setCategoryId(c.id)}>
-              <span className="tile-icon" aria-hidden="true">
-                {c.icon}
-              </span>
+              <ItemArt nameEn={c.name_en} icon={c.icon} name={nameOf(c, lang)} size={52} />
               <span className="tile-label">{nameOf(c, lang)}</span>
             </button>
           ))}
@@ -95,13 +95,13 @@ export function ItemPicker({
       {!query.trim() && current && (
         <>
           <button className="crumb" onClick={() => setCategoryId(current.parent_id)}>
-            <span aria-hidden="true" className="flip">‹</span> {current.icon} {nameOf(current, lang)}
+            <Icon name="back" size={20} /> {nameOf(current, lang)}
           </button>
           {subcategories.length > 0 && (
             <div className="chips">
               {subcategories.map((s) => (
                 <button key={s.id} className="chip" onClick={() => setCategoryId(s.id)}>
-                  {s.icon} {nameOf(s, lang)}
+                  {nameOf(s, lang)}
                 </button>
               ))}
             </div>
@@ -115,9 +115,7 @@ export function ItemPicker({
             const picked = selectedIds.includes(i.id);
             return (
               <button key={i.id} className={`tile${picked ? ' picked' : ''}`} onClick={() => onPick(i)} aria-pressed={picked}>
-                <span className="tile-icon" aria-hidden="true">
-                  {i.icon}
-                </span>
+                <ItemArt nameEn={i.name_en} icon={i.icon} name={nameOf(i, lang)} size={52} />
                 <span className="tile-label">{nameOf(i, lang)}</span>
                 {picked && (
                   <span className="tile-check" aria-hidden="true">
@@ -132,7 +130,7 @@ export function ItemPicker({
 
       {query.trim() && onNew && (
         <button className="btn ghost wide" onClick={() => onNew(query.trim())}>
-          ➕ {t('addNew', { name: query.trim() })}
+          <Icon name="plus" size={20} /> {t('addNew', { name: query.trim() })}
         </button>
       )}
       {query.trim() && visible.length === 0 && !onNew && <p className="hint">{t('noMatch')}</p>}

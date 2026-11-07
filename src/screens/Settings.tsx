@@ -1,13 +1,15 @@
 import { useQuery } from '@powersync/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHousehold } from '../app/household';
 import { signOut } from '../app/session';
 import { updateHousehold, updateProfile } from '../data/actions';
 import { supabase } from '../data/connector';
 import { db } from '../data/db';
 import { CURRENCIES, CURRENCY_CODES } from '../data/money';
-import { storeLang, useLang, useT, type Key, type Lang } from '../i18n';
+import { numberFmt, storeLang, useLang, useT, type Key, type Lang } from '../i18n';
+import { Icon } from '../ui/Icon';
 import { Screen } from '../ui/Screen';
+import { Sheet } from '../ui/Sheet';
 import { useToast } from '../ui/Toast';
 
 const EXPORT_TABLES = [
@@ -32,6 +34,7 @@ export function Settings() {
   const [name, setName] = useState(profile?.display_name ?? '');
   const [homeName, setHomeName] = useState(household.name);
   const [busy, setBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   const setLang = async (l: Lang) => {
     storeLang(l);
@@ -126,7 +129,9 @@ export function Settings() {
         <ul className="rows compact">
           {members.map((m) => (
             <li key={m.id} className="row">
-              <span className="row-title">👤 {m.display_name || t('someone')}</span>
+              <span className="row-title member-name">
+                <Icon name="person" size={20} /> {m.display_name || t('someone')}
+              </span>
               <span className="row-sub">{m.role === 'owner' ? t('owner') : t('member')}</span>
             </li>
           ))}
@@ -143,7 +148,7 @@ export function Settings() {
           </div>
         ) : (
           <button className="btn ghost wide" onClick={() => void invite()} disabled={busy}>
-            ➕ {t('inviteFamily')}
+            <Icon name="plus" size={20} /> {t('inviteFamily')}
           </button>
         )}
       </section>
@@ -217,7 +222,7 @@ export function Settings() {
       <section className="section">
         <h2 className="section-title">{t('backup')}</h2>
         <button className="btn ghost wide" onClick={() => void exportData()}>
-          💾 {t('downloadBackup')}
+          <Icon name="download" size={20} /> {t('downloadBackup')}
         </button>
       </section>
 
@@ -227,10 +232,57 @@ export function Settings() {
         <a href="/terms">{t('termsOfUse')}</a>
       </p>
 
-      <button className="btn danger-ghost wide" onClick={() => void signOut()}>
+      <button className="btn danger-ghost wide" onClick={() => setLeaving(true)}>
         {t('signOut')}
       </button>
+      {leaving && <SignOutSheet onClose={() => setLeaving(false)} />}
       <p className="version">v{__APP_VERSION__}</p>
     </Screen>
+  );
+}
+
+/**
+ * Signing out deletes this phone's copy of the home. Changes made offline that have not reached the
+ * server yet would be lost, so say how many are waiting and suggest connecting first.
+ */
+function SignOutSheet({ onClose }: { onClose: () => void }) {
+  const t = useT();
+  const lang = useLang();
+  const [waiting, setWaiting] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      const stats = await db.getUploadQueueStats();
+      if (!cancelled) setWaiting(stats.count);
+    };
+    void check();
+    const timer = setInterval(() => void check(), 2000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  return (
+    <Sheet title={t('signOutQuestion')} onClose={onClose}>
+      {waiting === null ? (
+        <p className="hint">{t('wait')}</p>
+      ) : waiting > 0 ? (
+        <p className="error" role="alert">
+          {t('signOutUnsent', { n: numberFmt(waiting, lang) })}
+        </p>
+      ) : (
+        <p className="hint">{t('signOutHint')}</p>
+      )}
+      <div className="stack">
+        <button className="btn primary wide big" onClick={onClose}>
+          {t('stayIn')}
+        </button>
+        <button className="btn danger-ghost wide" disabled={waiting === null} onClick={() => void signOut()}>
+          {waiting ? t('signOutAnyway') : t('signOut')}
+        </button>
+      </div>
+    </Sheet>
   );
 }
