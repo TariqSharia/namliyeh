@@ -1,19 +1,25 @@
-/* Home: olive, saffron and pomegranate, from the kitchen and the market.
+/* Style D: today's layout made premium. Deep olive, night blue and saffron from the kitchen and
+   the market; the namliyeh's mesh as the one decoration; Kufi headings, Plex for reading.
    One bold place (the three big buttons on the home screen); everything else calm.
    Logical properties (inline-start/end) everywhere so Arabic and English both lay out correctly. */
 
 :root {
-  --paper: #f6f7f2;
+  --paper: #f5f5f1;
   --surface: #ffffff;
-  --ink: #1f2a1c;
-  --muted: #5b6455;
-  --line: #dde1d4;
-  --olive: #33452a;
-  --olive-soft: #e3ead9;
-  --saffron: #e6a434;
-  --saffron-soft: #fbefd5;
-  --pomegranate: #a8323d;
-  --pomegranate-soft: #f6dfe1;
+  --ink: #1a211c;
+  --muted: #59625b;
+  --line: #e3e5df;
+  --olive: #2e4a2b;
+  --olive-soft: #eef1ea;
+  --night: #26354d;
+  --saffron: #dca640;
+  --saffron-soft: #fbf3e2;
+  --saffron-ink: #2a1e05;
+  --pomegranate: #8e3b1f;
+  --pomegranate-soft: #f7e6df;
+  --art-line: #2e4a2b;
+  --art-band: #dca640;
+  --heading: 'Noto Kufi Arabic', 'IBM Plex Sans Arabic', system-ui, sans-serif;
   --focus: #1d6fd8;
   --radius-sm: 10px;
   --radius: 16px;
@@ -32,6 +38,10 @@
     --line: #2f3829;
     --olive: #8fb06e;
     --olive-soft: #26321e;
+    --night: #2c3d58;
+    --saffron-ink: #2a1e05;
+    --art-line: #2e4a2b;
+    --art-band: #dca640;
     --saffron: #f0b44c;
     --saffron-soft: #3a2f17;
     --pomegranate: #e8707a;
@@ -66,6 +76,20 @@ h1,
 h2,
 p {
   margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+}
+
+/* Back and forward arrows point the reading direction's way. */
+[dir='rtl'] .dir-icon {
+  transform: scaleX(-1);
+}
+
+.icon {
+  flex: none;
 }
 
 button,
@@ -211,13 +235,15 @@ a {
   align-items: center;
   gap: 16px;
   inline-size: 100%;
-  min-block-size: 104px;
-  padding: 16px 20px;
+  min-block-size: 96px;
+  padding: 16px 18px;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   text-align: start;
   color: #fff;
-  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.14);
+  /* The namliyeh's wire mesh, faint enough to read over. */
+  background-image: repeating-linear-gradient(45deg, rgb(255 255 255 / 0.07) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.07) 0 1px, transparent 1px 10px);
   transition: transform 0.08s ease;
 }
 
@@ -226,27 +252,28 @@ a {
 }
 
 .big-tile.bought {
-  background: #33452a;
+  background-color: #2e4a2b;
 }
 
 .big-tile.used {
-  background: #2c3a4a;
+  background-color: #26354d;
 }
 
 .big-tile.need {
-  background: var(--saffron);
-  color: #2a1e05;
+  background-color: var(--saffron);
+  background-image: repeating-linear-gradient(45deg, rgb(60 40 0 / 0.08) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(-45deg, rgb(60 40 0 / 0.08) 0 1px, transparent 1px 10px);
+  color: var(--saffron-ink);
 }
 
 .big-icon {
   display: grid;
   place-items: center;
   flex: none;
-  inline-size: 68px;
-  block-size: 68px;
+  inline-size: 56px;
+  block-size: 56px;
   border-radius: 50%;
-  background: rgb(255 255 255 / 0.16);
-  font-size: 2.4rem;
+  background: rgb(255 255 255 / 0.14);
 }
 
 .big-tile.need .big-icon {
@@ -258,9 +285,10 @@ a {
 }
 
 .big-label {
-  font-size: 1.75rem;
-  font-weight: 600;
-  line-height: 1.2;
+  font-family: var(--heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .big-hint {
@@ -279,10 +307,11 @@ a {
   display: grid;
   place-items: center;
   border-radius: 22px;
-  background: #2a1e05;
-  color: var(--saffron);
-  font-size: 1.3rem;
-  font-weight: 600;
+  background: var(--saffron-ink);
+  color: #fff;
+  font-family: var(--heading);
+  font-size: 1.1rem;
+  font-weight: 700;
 }
 
 /* ---------- Sections, rows, cards ---------- */
@@ -292,8 +321,8 @@ a {
 }
 
 .section-title {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   color: var(--muted);
   margin-block-end: 8px;
 }
@@ -1141,20 +1170,12 @@ input[type='checkbox'][role='switch']:checked::after {
   font-weight: 600;
 }
 
-.nav-icon {
-  font-size: 1.5rem;
-  line-height: 1.2;
-  filter: grayscale(0.6);
-  opacity: 0.8;
+.bottom-nav a .icon {
+  margin-block-end: 2px;
 }
 
 .bottom-nav a.on {
   color: var(--olive);
-}
-
-.bottom-nav a.on .nav-icon {
-  filter: none;
-  opacity: 1;
 }
 
 /* ---------- Toast and sheet ---------- */
@@ -1530,4 +1551,76 @@ input[type='checkbox'][role='switch']:checked::after {
   block-size: 10px;
   margin-block-start: 8px;
   accent-color: var(--olive);
+}
+
+/* ---------- Item pictures ---------- */
+
+.item-art {
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--olive-soft);
+  line-height: 1;
+}
+
+.item-art-letter {
+  font-family: var(--heading);
+  font-weight: 700;
+  color: var(--olive);
+}
+
+/* ---------- At home: grouped by place, the number is what you read ---------- */
+
+.place-group + .place-group {
+  margin-block-start: 18px;
+}
+
+.row-count {
+  min-inline-size: 44px;
+  text-align: center;
+  font-family: var(--heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.row-count.word {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.row-count.none {
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.row-count.low {
+  color: var(--pomegranate);
+}
+
+.btn.icon-only {
+  inline-size: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+/* One row of choices that scrolls sideways instead of wrapping onto a second line. */
+.chips.scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: calc(-1 * var(--gutter));
+  padding-inline: var(--gutter);
+  margin-block-end: 14px;
+  scrollbar-width: none;
+}
+
+.chips.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.chips.scroll .chip {
+  flex: none;
 }

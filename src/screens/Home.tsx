@@ -5,7 +5,9 @@ import { takeFromStock, undoMovements, wasteBatch } from '../data/actions';
 import { today } from '../data/dates';
 import { EXPIRING_SOON, NEED_TO_BUY } from '../data/queries';
 import { nameOf, numberFmt, useLang, useT } from '../i18n';
+import { Icon } from '../ui/Icon';
 import { InstallCard } from '../ui/InstallCard';
+import { ItemArt } from '../ui/ItemArt';
 import { Screen } from '../ui/Screen';
 import { useToast } from '../ui/Toast';
 
@@ -29,6 +31,10 @@ export function Home() {
   const { data: need } = useQuery(NEED_TO_BUY, [ctx.householdId]);
   const { data: expiring } = useQuery<Expiring>(EXPIRING_SOON, [ctx.householdId, 3, today()]);
 
+  // The first few names say more than a count ("eggs, dish soap, rice").
+  const needNames = need.map((n: { free_text: string | null; name_en: string | null; name_ar: string | null }) => n.free_text || nameOf(n, lang));
+  const needPreview = needNames.slice(0, 3).join(lang === 'ar' ? '، ' : ', ') + (needNames.length > 3 ? '…' : '');
+
   const whenLabel = (days: number) =>
     days < 0 ? t('expiredAgo', { n: numberFmt(-days, lang) }) : days === 0 ? t('expiresToday') : days === 1 ? t('expiresTomorrow') : t('expiresInDays', { n: numberFmt(days, lang) });
 
@@ -37,8 +43,8 @@ export function Home() {
       <InstallCard where="home" />
       <nav className="big-tiles" aria-label={t('dailyTasks')}>
         <a className="big-tile bought" href="#/buy">
-          <span className="big-icon" aria-hidden="true">
-            🛒
+          <span className="big-icon">
+            <Icon name="bagPlus" size={28} />
           </span>
           <span className="big-text">
             <span className="big-label">{t('iBought')}</span>
@@ -46,8 +52,8 @@ export function Home() {
           </span>
         </a>
         <a className="big-tile used" href="#/use">
-          <span className="big-icon" aria-hidden="true">
-            🍽️
+          <span className="big-icon">
+            <Icon name="bagMinus" size={28} />
           </span>
           <span className="big-text">
             <span className="big-label">{t('iUsed')}</span>
@@ -55,12 +61,12 @@ export function Home() {
           </span>
         </a>
         <a className="big-tile need" href="#/need">
-          <span className="big-icon" aria-hidden="true">
-            📝
+          <span className="big-icon">
+            <Icon name="list" size={28} />
           </span>
           <span className="big-text">
             <span className="big-label">{t('needToBuy')}</span>
-            <span className="big-hint">{need.length ? t('needCount', { n: numberFmt(need.length, lang) }) : t('needNone')}</span>
+            <span className="big-hint">{need.length ? needPreview : t('needNone')}</span>
           </span>
           {need.length > 0 && (
             <span className="badge" aria-hidden="true">
@@ -79,20 +85,18 @@ export function Home() {
             {expiring.map((b) => (
               <li key={b.batch_id} className="row">
                 <button className="row-main" onClick={() => go({ name: 'item', id: b.item_id })}>
-                  <span className="row-icon" aria-hidden="true">
-                    {b.icon}
-                  </span>
+                  <ItemArt nameEn={b.name_en} icon={b.icon} name={nameOf(b, lang)} size={44} />
                   <span className="row-text">
                     <span className="row-title">{nameOf(b, lang)}</span>
                     <span className={`row-sub${b.days_left <= 0 ? ' danger' : ''}`}>
                       {whenLabel(b.days_left)}
-                      {b.expiry_is_estimated ? ` · ${t('estimated')}` : ''}
+                      {b.expiry_is_estimated ? `${lang === 'ar' ? '، ' : ', '}${t('estimated')}` : ''}
                     </span>
                   </span>
                 </button>
                 <div className="row-actions">
                   <button
-                    className="btn small"
+                    className="btn small primary"
                     onClick={async () => {
                       const ids = await takeFromStock(ctx, b.item_id, b.remaining);
                       toast(t('markedUsed', { name: nameOf(b, lang) }), () => undoMovements(ctx, ids));
@@ -101,13 +105,14 @@ export function Home() {
                     {t('used')}
                   </button>
                   <button
-                    className="btn small danger-ghost"
+                    className="btn small danger-ghost icon-only"
+                    aria-label={`${t('thrownAway')}: ${nameOf(b, lang)}`}
                     onClick={async () => {
                       const id = await wasteBatch(ctx, b.batch_id, b.remaining);
                       toast(t('markedWasted', { name: nameOf(b, lang) }), () => undoMovements(ctx, [id]));
                     }}
                   >
-                    {t('thrownAway')}
+                    <Icon name="trash" size={20} />
                   </button>
                 </div>
               </li>

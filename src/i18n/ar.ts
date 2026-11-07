@@ -160,6 +160,9 @@ export const ar: Messages = {
   writeAnything: 'اكتب أي شيء، مثلاً: بطاريات',
 
   atHome: 'في المنزل',
+  allPlaces: 'الكل',
+  otherPlace: 'أخرى',
+  belowMinimum: 'في قائمة الشراء',
   myItems: 'أغراضنا',
   allItems: 'كل الأغراض',
   noneHereTryAll: 'لا يوجد شيء هنا بعد. جرّب «كل الأغراض».',

@@ -16,7 +16,8 @@ const ITEM_RULES = /* sql */ `
     hi.id AS household_item_id,
     COALESCE(hi.min_quantity, 0) AS min_quantity,
     hi.current_level,
-    hi.location_id
+    hi.location_id,
+    COALESCE(c.default_location_type, pc.default_location_type, 'other') AS default_location_type
   FROM items i
   JOIN categories c ON c.id = i.category_id
   LEFT JOIN categories pc ON pc.id = c.parent_id
@@ -41,6 +42,13 @@ export const ITEMS_WITH_STOCK = /* sql */ `
          COALESCE((SELECT SUM(ob.remaining) FROM open_batches ob WHERE ob.item_id = r.id), 0) AS stock,
          (SELECT MIN(ob.expiry_date) FROM open_batches ob WHERE ob.item_id = r.id) AS next_expiry
   FROM rules r
+`;
+
+/** The household's places (fridge, pantry...), in the order they were made. ?1 = household id. */
+export const LOCATIONS = /* sql */ `
+  SELECT id, name, type FROM locations
+  WHERE household_id = ?1 AND deleted_at IS NULL
+  ORDER BY created_at, name
 `;
 
 /** Items the household has at home right now (counted with stock, or level items not out). */

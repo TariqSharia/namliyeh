@@ -1,3 +1,4 @@
+import { Icon } from './Icon';
 import { useStatus } from '@powersync/react';
 import type { ReactNode } from 'react';
 import { back } from '../app/router';
@@ -23,7 +24,7 @@ export function Screen({
       <header className="topbar">
         {showBack ? (
           <button className="icon-btn back" onClick={back} aria-label={t('back')}>
-            <span aria-hidden="true" className="flip">‹</span>
+            <Icon name="back" />
           </button>
         ) : (
           <span className="topbar-spacer" />

@@ -158,6 +158,9 @@ export const en = {
   writeAnything: 'Write anything, e.g. batteries',
 
   atHome: 'At home',
+  allPlaces: 'All',
+  otherPlace: 'Other',
+  belowMinimum: 'On the shopping list',
   myItems: 'Our items',
   allItems: 'All items',
   noneHereTryAll: 'Nothing here yet. Try “All items”.',

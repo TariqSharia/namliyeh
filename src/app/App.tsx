@@ -20,6 +20,7 @@ import { href, useRoute, type Route } from './router';
 import { setPendingLang, takePendingLang } from './pendingLang';
 import { useSession } from './session';
 import { SyncWait } from '../ui/SyncWait';
+import { Icon, type IconName } from '../ui/Icon';
 
 export function App() {
   const { session, ready } = useSession();
@@ -116,11 +117,11 @@ function Page({ route }: { route: Route }) {
 
 function BottomNav({ route }: { route: Route }) {
   const t = useT();
-  const tabs: { route: Route; icon: string; label: string; match: Route['name'][] }[] = [
-    { route: { name: 'home' }, icon: '🏠', label: t('tabHome'), match: ['home', 'buy', 'use', 'need'] },
-    { route: { name: 'stock' }, icon: '🧺', label: t('tabStock'), match: ['stock', 'item'] },
-    { route: { name: 'money' }, icon: '💰', label: t('tabMoney'), match: ['money'] },
-    { route: { name: 'settings' }, icon: '⚙️', label: t('tabSettings'), match: ['settings'] }
+  const tabs: { route: Route; icon: IconName; label: string; match: Route['name'][] }[] = [
+    { route: { name: 'home' }, icon: 'home', label: t('tabHome'), match: ['home', 'buy', 'use', 'need'] },
+    { route: { name: 'stock' }, icon: 'box', label: t('tabStock'), match: ['stock', 'item'] },
+    { route: { name: 'money' }, icon: 'wallet', label: t('tabMoney'), match: ['money'] },
+    { route: { name: 'settings' }, icon: 'settings', label: t('tabSettings'), match: ['settings'] }
   ];
   return (
     <nav className="bottom-nav" aria-label={t('mainMenu')}>
@@ -128,9 +129,7 @@ function BottomNav({ route }: { route: Route }) {
         const active = tab.match.includes(route.name);
         return (
           <a key={tab.label} href={href(tab.route)} className={active ? 'on' : ''} aria-current={active ? 'page' : undefined}>
-            <span className="nav-icon" aria-hidden="true">
-              {tab.icon}
-            </span>
+            <Icon name={tab.icon} />
             <span className="nav-label">{tab.label}</span>
           </a>
         );
