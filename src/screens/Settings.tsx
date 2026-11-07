@@ -1,6 +1,7 @@
 import { useQuery } from '@powersync/react';
 import { useEffect, useState } from 'react';
 import { useHousehold } from '../app/household';
+import { disablePush, enablePush, pushState, testPush, updatePushLanguage, type PushState } from '../app/push';
 import { signOut } from '../app/session';
 import { updateHousehold, updateProfile } from '../data/actions';
 import { supabase } from '../data/connector';
@@ -39,6 +40,7 @@ export function Settings() {
   const setLang = async (l: Lang) => {
     storeLang(l);
     await updateProfile(ctx.userId, { language: l });
+    void updatePushLanguage(l);
   };
 
   async function invite() {
@@ -152,6 +154,8 @@ export function Settings() {
           </button>
         )}
       </section>
+
+      <Reminders />
 
       <section className="section">
         <h2 className="section-title">{t('money')}</h2>
@@ -284,5 +288,65 @@ function SignOutSheet({ onClose }: { onClose: () => void }) {
         </button>
       </div>
     </Sheet>
+  );
+}
+
+/** Expiry reminders on this phone: one switch, plus the one thing to know when it cannot work. */
+function Reminders() {
+  const t = useT();
+  const lang = useLang();
+  const toast = useToast();
+  const [state, setState] = useState<PushState | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    void pushState().then(setState).catch(() => setState('unsupported'));
+  }, []);
+
+  if (state === null || state === 'unsupported') return null;
+
+  async function toggle(on: boolean) {
+    if (!navigator.onLine) return toast(t('needInternet'));
+    setBusy(true);
+    try {
+      setState(on ? await enablePush(lang) : await disablePush());
+    } catch {
+      toast(t('remindersFailed'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="section">
+      <h2 className="section-title">{t('reminders')}</h2>
+      {state === 'install-first' ? (
+        <p className="hint">{t('remindersInstallFirst')}</p>
+      ) : (
+        <>
+          <label className="switch-row">
+            <span>
+              <span className="row-title">{t('remindExpiry')}</span>
+              <span className="row-sub">{state === 'denied' ? t('remindersBlocked') : t('remindExpiryHint')}</span>
+            </span>
+            <input type="checkbox" role="switch" checked={state === 'on'} disabled={busy || state === 'denied'} onChange={(e) => void toggle(e.target.checked)} />
+          </label>
+          {state === 'on' && (
+            <button
+              className="btn ghost wide"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                const ok = await testPush().catch(() => false);
+                setBusy(false);
+                toast(ok ? t('testSent') : t('remindersFailed'));
+              }}
+            >
+              {t('sendTest')}
+            </button>
+          )}
+        </>
+      )}
+    </section>
   );
 }

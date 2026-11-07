@@ -20,7 +20,9 @@ export default defineConfig({
         globIgnores: ['**/mc-wa-sqlite*'],
         navigateFallback: '/index.html',
         // Real pages, not part of the app: never answer them with the app.
-        navigateFallbackDenylist: [/^\/(privacy|terms)(\.html)?$/]
+        navigateFallbackDenylist: [/^\/(privacy|terms)(\.html)?$/],
+        // Shows expiry reminders sent by the server (public/push-sw.js).
+        importScripts: ['/push-sw.js']
       },
       includeAssets: ['icons/*.png', 'icons/icon.svg'],
       manifest: {

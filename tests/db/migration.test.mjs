@@ -21,13 +21,24 @@ const AUTH_STUB = `
   -- Same defaults as a Supabase project: new public tables and functions are open to these roles.
   alter default privileges in schema public grant all on tables to anon, authenticated;
   alter default privileges in schema public grant all on functions to anon, authenticated;
+  -- Stand-ins for what a Supabase project has and PGlite lacks: the service role, pgcrypto's
+  -- random bytes in the extensions schema, and the pg_cron scheduler.
+  create role service_role nologin;
+  create schema extensions;
+  create function extensions.gen_random_bytes(int) returns bytea language sql as
+    $$ select decode(md5(random()::text) || md5(random()::text), 'hex') $$;
+  create schema cron;
+  create function cron.schedule(text, text, text) returns bigint language sql as $$ select 1::bigint $$;
 `;
+
+// PGlite has no pg_cron or pg_net packages; the stand-ins above take their place.
+const forPglite = (sql) => sql.replace(/^create extension if not exists pg_(cron|net);$/gm, '');
 
 async function freshDb() {
   const db = new PGlite();
   await db.exec(AUTH_STUB);
   for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort()) {
-    await db.exec(readFileSync(new URL(file, MIGRATIONS), 'utf8'));
+    await db.exec(forPglite(readFileSync(new URL(file, MIGRATIONS), 'utf8')));
   }
   return db;
 }
@@ -222,6 +233,53 @@ test('a visitor who is not signed in can read nothing', async () => {
   try {
     await assert.rejects(db.query(`select * from public.items limit 1`));
     await assert.rejects(db.query(`select public.create_household('x')`));
+  } finally {
+    await db.exec('reset role;');
+  }
+});
+
+test('expiry reminders reach the phones of that home only, and the keys stay private', async () => {
+  const db = await freshDb();
+  await addUser(db, TARIQ, 'tariq');
+  await addUser(db, STRANGER, 'stranger');
+  const hh = await as(db, TARIQ, async () =>
+    (await db.query(`select public.create_household('Home', 'ILS', 'ar') as id`)).rows[0].id
+  );
+  const milk = (await db.query(`select id from public.items where name_en = 'Milk'`)).rows[0].id;
+
+  await as(db, TARIQ, async () => {
+    await db.query(`select public.save_push_subscription('https://push.example/tariq', 'k', 'a', 'ar')`);
+    const b = await db.query(
+      `insert into public.batches (household_id, item_id, purchase_date, expiry_date, quantity_initial, created_by)
+       values ($1, $2, '2026-11-06', '2026-11-08', 2, $3) returning id`,
+      [hh, milk, TARIQ]
+    );
+    await db.query(`insert into public.stock_movements (household_id, batch_id, type, quantity, user_id) values ($1, $2, 'purchase', 2, $3)`, [
+      hh,
+      b.rows[0].id,
+      TARIQ
+    ]);
+    // Phones cannot read the table or the server's keys.
+    await assert.rejects(db.query(`select * from public.push_subscriptions`));
+    await assert.rejects(db.query(`select * from public.push_config()`));
+    await assert.rejects(db.query(`select * from public.push_due('2026-11-08')`));
+  });
+  await as(db, STRANGER, async () => {
+    await db.query(`select public.save_push_subscription('https://push.example/stranger', 'k', 'a', 'en')`);
+    // Removing someone else's phone does nothing.
+    await db.query(`select public.delete_push_subscription('https://push.example/tariq')`);
+  });
+
+  await db.exec('set role service_role;');
+  try {
+    const due = (await db.query(`select * from public.push_due('2026-11-08')`)).rows;
+    assert.equal(due.length, 1, 'only the phone of the home with the milk');
+    assert.equal(due[0].endpoint, 'https://push.example/tariq');
+    assert.deepEqual(due[0].names_ar, ['حليب']);
+    assert.equal((await db.query(`select * from public.push_due('2026-11-09')`)).rows.length, 0);
+    const cfg = (await db.query(`select * from public.push_config()`)).rows[0];
+    assert.equal(cfg.vapid_public, null);
+    assert.ok(cfg.cron_secret.length >= 32);
   } finally {
     await db.exec('reset role;');
   }
