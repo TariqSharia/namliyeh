@@ -1,6 +1,6 @@
 # Namliyeh
 
-The household app for supplies and money (النملية). This is style D, approved by the family on 7 November 2026: the original layout people already know, made premium. It is the base every new screen starts from. Code lives in github.com/TariqSharia/namliyeh (`src/styles.css`, `src/ui/Icon.tsx`, `src/ui/ItemArt.tsx`); git tag `design-d-base` marks the approved version.
+The household app for supplies and money (النملية). This is style D, approved by the family on 7 November 2026: the original layout people already know, made premium. It is the base every new screen starts from. Code lives in github.com/TariqSharia/namliyeh (`src/styles.css`, `src/ui/Icon.tsx`, `src/ui/ItemArt.tsx`); the branch `design-d-base` marks the approved version (keep it; never commit to it).
 
 ## Who it is for
 
@@ -40,5 +40,5 @@ Mock-ups of every approved screen: the Namliyeh redesign canvas (boards named "D
 
 - Tokens are the CSS custom properties at the top of `src/styles.css` (same names as above: `--paper`, `--olive`, `--night`, `--saffron`, `--pomegranate`, `--heading`…). New colours go there first, never as literals in a component.
 - Fonts come from `@fontsource/noto-kufi-arabic` and `@fontsource/ibm-plex-sans-arabic` (self-hosted, work offline), imported in `src/main.tsx`.
-- To return to this base: `git checkout design-d-base -- src/styles.css src/ui/Icon.tsx src/ui/ItemArt.tsx`.
+- To return to this base: `git checkout origin/design-d-base -- src/styles.css src/ui/Icon.tsx src/ui/ItemArt.tsx`.
 - Design system page (tokens, rules, cover): the "Namliyeh" design system artifact on claude.ai.
