@@ -54,7 +54,8 @@ npm test
 - [x] Offline with sync
 - [x] Google sign-in, and install help for Android, iPhone and in-app browsers
 - [x] Daily keep-alive for the free Supabase plan
-- [ ] Barcode scanning
+- [x] Expiry reminders as phone notifications
+- [x] Barcode scanning (shared barcodes, Open Food Facts suggestions, works offline on both phones)
 - [ ] Recurring entries and budgets
 - [ ] Price comparison between shops
 - [ ] Catalog review screen for reviewers

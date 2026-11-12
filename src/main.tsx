@@ -14,12 +14,16 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import { App } from './app/App';
 import { listenForInstall } from './app/install';
+import { sendPendingBarcodes } from './data/barcodes';
 import { SessionProvider } from './app/session';
 import { db } from './data/db';
 
 // Installs the offline copy of the app and updates it quietly when a new version is published.
 registerSW({ immediate: true });
 listenForInstall();
+// Barcodes taught while offline go to the shared list when the phone is back online.
+void sendPendingBarcodes();
+window.addEventListener('online', () => void sendPendingBarcodes());
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -1802,3 +1802,149 @@ input[aria-invalid='true'] {
   background: var(--surface);
   color: var(--pomegranate);
 }
+
+/* ---------- Barcode scanning ---------- */
+
+.scan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 56px;
+  margin-block-end: 12px;
+  border: 1.5px solid var(--olive);
+  background: var(--surface);
+  color: var(--olive);
+  font-weight: 600;
+}
+
+.scanner {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #0b0f0a;
+  color: #fff;
+}
+
+.scanner-video {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.scanner-top,
+.scanner-bottom {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 12px) var(--gutter) 12px;
+  background: linear-gradient(rgb(0 0 0 / 0.6), transparent);
+}
+
+.scanner-top {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scanner-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.scanner-btn,
+.scanner-btn-space {
+  inline-size: 48px;
+  block-size: 48px;
+  flex: none;
+}
+
+.scanner-btn {
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.18);
+  color: #fff;
+}
+
+.scanner-btn.on {
+  background: var(--saffron);
+  color: var(--saffron-ink);
+}
+
+/* The frame: where to hold the barcode. Wide and short, like a barcode. */
+.scanner-frame {
+  position: absolute;
+  inset-inline: 12%;
+  inset-block-start: 38%;
+  block-size: 22%;
+  border: 3px solid rgb(255 255 255 / 0.9);
+  border-radius: 18px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+.scanner-bottom {
+  flex-direction: column;
+  padding: 16px var(--gutter) calc(env(safe-area-inset-bottom) + 16px);
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.75) 30%);
+}
+
+.scanner-hint,
+.scanner-problem {
+  min-block-size: 1.6em;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.scanner-problem {
+  padding: 12px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.12);
+  font-weight: 500;
+}
+
+.scanner-type {
+  display: flex;
+  gap: 8px;
+}
+
+.scanner-type input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 52px;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+}
+
+.scanner .btn.ghost {
+  border-color: rgb(255 255 255 / 0.5);
+  background: transparent;
+  color: #fff;
+}
+
+.barcode-number {
+  font-size: 0.9rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.barcode-product {
+  display: grid;
+  gap: 2px;
+  margin-block: 8px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.barcode-guesses {
+  margin-block-end: 8px;
+}

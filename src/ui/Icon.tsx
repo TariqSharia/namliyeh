@@ -78,6 +78,20 @@ const PATHS = {
       <path d="M5 19h14" />
     </>
   ),
+  /** A barcode inside a camera frame. */
+  scan: (
+    <>
+      <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+      <path d="M8 8v8M11 8v8M14 8v8M17 8v8" />
+    </>
+  ),
+  torch: (
+    <>
+      <path d="M8 3h8l-1 5H9z" />
+      <path d="M9 8h6v4l-1 9h-4l-1-9z" />
+      <path d="M12 12v3" />
+    </>
+  ),
   key: (
     <>
       <circle cx="8" cy="15" r="4" />

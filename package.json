@@ -22,6 +22,7 @@
     "@powersync/react": "^2.1.0",
     "@powersync/web": "^2.5.0",
     "@supabase/supabase-js": "^2.118.0",
+    "barcode-detector": "3.2.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

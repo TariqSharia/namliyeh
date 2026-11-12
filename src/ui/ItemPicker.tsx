@@ -24,7 +24,7 @@ export type Category = {
   name_ar: string | null;
 };
 
-const PICKER_ITEMS = /* sql */ `
+export const PICKER_ITEMS = /* sql */ `
   SELECT i.id, i.name_en, i.name_ar, COALESCE(i.icon, c.icon, '📦') AS icon, i.category_id,
          COALESCE(c.parent_id, c.id) AS top_category_id, i.tracking_mode
   FROM items i JOIN categories c ON c.id = i.category_id

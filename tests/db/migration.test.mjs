@@ -284,3 +284,45 @@ test('expiry reminders reach the phones of that home only, and the keys stay pri
     await db.exec('reset role;');
   }
 });
+
+test('a barcode taught by one home is known to every home, and points only at visible items', async () => {
+  const db = await freshDb();
+  await addUser(db, TARIQ, 'tariq');
+  await addUser(db, STRANGER, 'stranger');
+  const hh = await as(db, TARIQ, async () => (await db.query(`select public.create_household('Home', 'ILS', 'ar') as id`)).rows[0].id);
+  const other = await as(db, STRANGER, async () => (await db.query(`select public.create_household('Other', 'JOD', 'en') as id`)).rows[0].id);
+  const milk = (await db.query(`select id from public.items where name_en = 'Milk'`)).rows[0].id;
+  const eggs = (await db.query(`select id from public.items where name_en = 'Eggs'`)).rows[0].id;
+
+  await as(db, TARIQ, async () => {
+    assert.equal((await db.query(`select * from public.lookup_barcode('6281007031234')`)).rows.length, 0);
+    const got = await db.query(`select public.remember_barcode('6281007031234', $1, $2, 'المراعي حليب طازج') as item`, [milk, hh]);
+    assert.equal(got.rows[0].item, milk);
+    await assert.rejects(db.query(`select public.remember_barcode('not-a-code', $1, $2)`, [milk, hh]));
+    await assert.rejects(db.query(`select public.remember_barcode('12345678', $1, $2)`, [milk, other]), 'not a member of that home');
+  });
+  await as(db, STRANGER, async () => {
+    const found = (await db.query(`select * from public.lookup_barcode('6281007031234')`)).rows;
+    assert.equal(found[0].item_id, milk);
+    assert.equal(found[0].product_name_ar, 'المراعي حليب طازج');
+    // A second answer does not overwrite the first.
+    const again = await db.query(`select public.remember_barcode('6281007031234', $1, $2) as item`, [eggs, other]);
+    assert.equal(again.rows[0].item, milk);
+    // A home's own pending item stays private, and so do barcodes pointing at it.
+    const mine = await db.query(
+      `insert into public.items (category_id, name_en, status, created_by, created_by_household)
+       select id, 'Grandma pickles', 'pending', $1, $2 from public.categories limit 1 returning id`,
+      [STRANGER, other]
+    );
+    await db.query(`select public.remember_barcode('99999999', $1, $2)`, [mine.rows[0].id, other]);
+  });
+  await as(db, TARIQ, async () => {
+    assert.equal((await db.query(`select * from public.lookup_barcode('99999999')`)).rows.length, 0);
+  });
+  await db.exec('set role anon;');
+  try {
+    await assert.rejects(db.query(`select * from public.lookup_barcode('6281007031234')`));
+  } finally {
+    await db.exec('reset role;');
+  }
+});

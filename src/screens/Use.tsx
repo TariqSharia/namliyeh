@@ -8,6 +8,9 @@ import { nameOf, numberFmt, useLang, useT } from '../i18n';
 import type { Category } from '../ui/ItemPicker';
 import { Icon } from '../ui/Icon';
 import { ItemArt } from '../ui/ItemArt';
+import { Scanner } from '../ui/Scanner';
+import { UnknownBarcode } from '../ui/UnknownBarcode';
+import { lookupBarcode } from '../data/barcodes';
 import { Empty, Screen } from '../ui/Screen';
 import { matches } from '../ui/search';
 import { useToast } from '../ui/Toast';
@@ -37,6 +40,29 @@ export function Use() {
   const { data: categories } = useQuery<Category>(CATEGORIES);
   const [mode, setMode] = useState<'use' | 'waste'>('use');
   const [query, setQuery] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const [unknownCode, setUnknownCode] = useState<string | null>(null);
+  const [justTaught, setJustTaught] = useState<string | null>(null);
+
+  // A scanned barcode takes one of that item out, like tapping it. Not at home: say so.
+  async function scannedItem(itemId: string, name: string) {
+    const r = rows.find((x) => x.id === itemId);
+    if (!r || (r.tracking_mode === 'counted' && r.stock <= 0)) return setScanStatus(t('notAtHomeName', { name }));
+    if (r.tracking_mode === 'level') return setScanStatus(t('levelItemHint', { name }));
+    await takeOne(r);
+    setScanStatus(mode === 'use' ? t('markedUsed', { name }) : t('markedWasted', { name }));
+  }
+
+  async function scanned(code: string) {
+    const itemId = await lookupBarcode(code);
+    if (!itemId) {
+      setScanning(false);
+      return setUnknownCode(code);
+    }
+    const r = rows.find((x) => x.id === itemId);
+    await scannedItem(itemId, r ? nameOf(r, lang) : t('someone'));
+  }
 
   const groups = useMemo(() => {
     const filtered = rows.filter((r) => matches(query, r.name_ar, r.name_en));
@@ -57,8 +83,38 @@ export function Use() {
     toast(t('levelSet', { name: nameOf(r, lang), level: t(`level_${l}`) }), () => undoLevel(ctx, r.id, res.previous, res.movementIds));
   }
 
+  const scanLayer = (
+    <>
+      {scanning && (
+        <Scanner
+          title={mode === 'use' ? t('used') : t('thrownAway')}
+          status={scanStatus}
+          skip={justTaught}
+          onCode={(c) => void scanned(c)}
+          onClose={() => {
+            setScanning(false);
+            setScanStatus(null);
+          }}
+        />
+      )}
+      {unknownCode && (
+        <UnknownBarcode
+          code={unknownCode}
+          onClose={() => setUnknownCode(null)}
+          onPicked={(item) => {
+            setJustTaught(unknownCode);
+            setUnknownCode(null);
+            void scannedItem(item.id, nameOf(item, lang));
+            setScanning(true);
+          }}
+        />
+      )}
+    </>
+  );
+
   return (
     <Screen title={t('iUsed')}>
+      {scanLayer}
       <div className="segmented" role="radiogroup" aria-label={t('whatHappened')}>
         <button role="radio" aria-checked={mode === 'use'} className={mode === 'use' ? 'on' : ''} onClick={() => setMode('use')}>
           <Icon name="bagMinus" size={20} /> {t('used')}
@@ -67,6 +123,12 @@ export function Use() {
           <Icon name="trash" size={20} /> {t('thrownAway')}
         </button>
       </div>
+
+      {rows.length > 0 && (
+        <button className="btn scan-btn wide" onClick={() => setScanning(true)}>
+          <Icon name="scan" /> {t('scanBarcode')}
+        </button>
+      )}
 
       {rows.length > 8 && (
         <label className="search">

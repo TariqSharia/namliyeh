@@ -9,7 +9,10 @@ import { CATEGORIES, ITEMS_WITH_STOCK, LAST_PRICES, MY_STORES, NEED_TO_BUY } fro
 import { nameOf, numberFmt, useLang, useT, type Key } from '../i18n';
 import { Icon } from '../ui/Icon';
 import { ItemArt } from '../ui/ItemArt';
-import { ItemPicker, type Category, type PickerItem } from '../ui/ItemPicker';
+import { ItemPicker, PICKER_ITEMS, type Category, type PickerItem } from '../ui/ItemPicker';
+import { Scanner } from '../ui/Scanner';
+import { UnknownBarcode } from '../ui/UnknownBarcode';
+import { lookupBarcode } from '../data/barcodes';
 import { Screen } from '../ui/Screen';
 import { Sheet } from '../ui/Sheet';
 import { Stepper } from '../ui/Stepper';
@@ -44,6 +47,7 @@ export function Buy() {
   const moneyOn = Boolean(household.money_enabled);
 
   const { data: itemInfo } = useQuery<ItemInfo>(ITEMS_WITH_STOCK, [ctx.householdId]);
+  const { data: pickerItems } = useQuery<PickerItem>(PICKER_ITEMS);
   const { data: stores } = useQuery<StoreRow>(MY_STORES, [ctx.householdId]);
   const { data: need } = useQuery<NeedRow>(NEED_TO_BUY, [ctx.householdId]);
   const { data: lastPrices } = useQuery<LastPrice>(LAST_PRICES, [ctx.householdId]);
@@ -75,6 +79,23 @@ export function Buy() {
   const [left, setLeft] = useState<Set<string>>(() => new Set());
   const [tried, setTried] = useState(false);
   const [pickingCurrency, setPickingCurrency] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
+  const [unknownCode, setUnknownCode] = useState<string | null>(null);
+  const [justTaught, setJustTaught] = useState<string | null>(null);
+
+  // A scanned barcode: known -> one more of that item in the trip; unknown -> ask once.
+  async function scanned(code: string) {
+    const itemId = await lookupBarcode(code);
+    const item = itemId ? pickerItems.find((i) => i.id === itemId) : undefined;
+    if (item) {
+      addItem(item);
+      setScanStatus(t('addedName', { name: nameOf(item, lang) }));
+    } else {
+      setScanning(false);
+      setUnknownCode(code);
+    }
+  }
   const leave = (key: string) => setLeft((s) => new Set(s).add(key));
   const badPriceOf = (l: Line) => Boolean(l.price.trim()) && parseAmount(l.price, currency) == null;
   const badTotal = Boolean(total.trim()) && parseAmount(total, currency) == null;
@@ -275,6 +296,9 @@ export function Buy() {
         <h2 id="add-h" className="section-title">
           {t('addSomething')}
         </h2>
+        <button className="btn scan-btn wide" onClick={() => setScanning(true)}>
+          <Icon name="scan" /> {t('scanBarcode')}
+        </button>
         <ItemPicker onPick={(i) => addItem(i)} onNew={setNewName} selectedIds={lines.map((l) => l.itemId ?? '')} />
       </section>
 
@@ -296,6 +320,31 @@ export function Buy() {
           onCreated={(item) => {
             addItem(item);
             setNewName(null);
+          }}
+        />
+      )}
+      {scanning && (
+        <Scanner
+          title={t('scanBarcode')}
+          status={scanStatus}
+          skip={justTaught}
+          onCode={(c) => void scanned(c)}
+          onClose={() => {
+            setScanning(false);
+            setScanStatus(null);
+          }}
+        />
+      )}
+      {unknownCode && (
+        <UnknownBarcode
+          code={unknownCode}
+          onClose={() => setUnknownCode(null)}
+          onPicked={(item) => {
+            setJustTaught(unknownCode);
+            setUnknownCode(null);
+            addItem(item);
+            setScanStatus(t('addedName', { name: nameOf(item, lang) }));
+            setScanning(true);
           }}
         />
       )}
